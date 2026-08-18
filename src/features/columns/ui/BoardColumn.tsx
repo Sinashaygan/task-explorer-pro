@@ -1,6 +1,6 @@
 "use client";
 
-import { IconButton, Paper, Stack, Typography } from "@mui/material";
+import { Box, IconButton, Paper, Stack, Typography } from "@mui/material";
 import KeyboardArrowDownRoundedIcon from "@mui/icons-material/KeyboardArrowDownRounded";
 import { KeyboardArrowRightRounded } from "@mui/icons-material";
 
@@ -8,6 +8,8 @@ import { selectCardsByColumnId } from "@/src/entities/card/model/selectors";
 import { Column } from "@/src/shared/types/normalized";
 import { useAppDispatch, useAppSelector } from "@/src/store/hook";
 import { toggleColumnCollapse } from "@/src/store/slices/boardSlice";
+import { EmptyState } from "@/src/shared/ui/EmptyState";
+import { BoardCard } from "../../cards/ui/BoardCard";
 
 interface BoardColumnProps {
   column: Column;
@@ -64,4 +66,85 @@ export function BoardColumn({ column }: BoardColumnProps) {
       </Paper>
     );
   }
+
+  return (
+    <Paper
+      variant="outlined"
+      sx={{
+        width: 320,
+        minWidth: 320,
+        maxHeight: "calc(100vh - 180px)",
+        borderRadius: 4,
+        bgcolor: "#F9FAFB",
+        display: "flex",
+        flexDirection: "column",
+        overflow: "hidden",
+      }}
+    >
+      <Box
+        sx={{
+          p: 2,
+          borderBottom: "1px solid",
+          borderColor: "divider",
+          bgcolor: "background.paper",
+        }}
+      >
+        <Stack
+          direction="row"
+          sx={{
+            alignItems: "center",
+            justifyContent: "space-between",
+          }}
+        >
+          <Stack direction="row" spacing={1.25} sx={{ alignItems :"center" }}>
+            <Box
+              sx={{
+                width: 10,
+                height: 10,
+                borderRadius: 999,
+                bgcolor: column.color ?? "grey.400",
+              }}
+            />
+
+            <Typography sx={{fontWeight:800}}>{column.title}</Typography>
+
+            <Typography
+              variant="caption"
+              color="text.secondary"
+              sx={{
+                px: 1,
+                py: 0.25,
+                borderRadius: 999,
+                bgcolor: "grey.100",
+              }}
+            >
+              {cards.length}
+            </Typography>
+          </Stack>
+
+          <IconButton size="small" onClick={handleToggleCollapse}>
+            <KeyboardArrowDownRoundedIcon fontSize="small" />
+          </IconButton>
+        </Stack>
+      </Box>
+
+      <Stack
+        spacing={2}
+        sx={{
+          p: 2,
+          overflowY: "auto",
+          flex: 1,
+        }}
+      >
+        {cards.length > 0 ? (
+          cards.map((card) => <BoardCard key={card.id} card={card} />)
+        ) : (
+          <EmptyState
+            title="No cards"
+            description="Cards moved here will appear in this column."
+          />
+        )}
+      </Stack>
+    </Paper>
+  );
 }
