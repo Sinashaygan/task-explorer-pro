@@ -9,6 +9,6 @@ export const selectCurrentBoard = createSelector(
 );
 
 export const selectBoardColumnIds = createSelector(
-  selectCurrentBoard,
+  [selectCurrentBoard],
   (board) => board?.columnIds ?? [],
 );
