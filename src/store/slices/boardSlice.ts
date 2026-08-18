@@ -1,39 +1,61 @@
-import { Board, Card, Column } from "@/src/shared/types/normalized";
+import { Board, Card, Column, Id } from "@/src/shared/types/normalized";
 import {
+  createEntityAdapter,
   createSlice,
   PayloadAction,
-  createEntityAdapter,
 } from "@reduxjs/toolkit";
 
 export const cardsAdapter = createEntityAdapter<Card>();
 export const columnsAdapter = createEntityAdapter<Column>();
 
-interface BoardState {
+const cardsInitialState = cardsAdapter.getInitialState();
+const columnsInitialState = columnsAdapter.getInitialState();
+
+export interface BoardState {
   board: Board | null;
-  columns: ReturnType<typeof columnsAdapter.getInitialState>;
-  cards: ReturnType<typeof cardsAdapter.getInitialState>;
+  columns: typeof columnsInitialState;
+  cards: typeof cardsInitialState;
 }
 
 const initialState: BoardState = {
   board: null,
-  columns: columnsAdapter.getInitialState(),
-  cards: cardsAdapter.getInitialState(),
+  columns: columnsInitialState,
+  cards: cardsInitialState,
 };
+
+interface InitializeBoardPayload {
+  board: Board;
+  columns: Column[];
+  cards: Card[];
+}
 
 const boardSlice = createSlice({
   name: "board",
   initialState,
   reducers: {
-    initializeBoard: (
-      state,
-      action: PayloadAction<{ board: Board; columns: Column[]; cards: Card[] }>,
-    ) => {
-      state.board = action.payload.board;
-      columnsAdapter.setAll(state.columns, action.payload.columns);
-      cardsAdapter.setAll(state.cards, action.payload.cards);
+    initializeBoard: (state, action: PayloadAction<InitializeBoardPayload>) => {
+      const { board, columns, cards } = action.payload;
+
+      state.board = board;
+      columnsAdapter.setAll(state.columns, columns);
+      cardsAdapter.setAll(state.cards, cards);
+    },
+
+    resetBoard: () => initialState,
+
+    toggleColumnCollapse: (state, action: PayloadAction<Id>) => {
+      const columnId = action.payload;
+      const column = state.columns.entities[columnId];
+
+      if (!column) return;
+
+      column.isCollapsed = !column.isCollapsed;
+      column.updatedAt = new Date().toISOString();
     },
   },
 });
 
-export const { initializeBoard } = boardSlice.actions;
-export const boardReducer = boardSlice.reducer;
+export const { initializeBoard, resetBoard, toggleColumnCollapse } =
+  boardSlice.actions;
+
+export default boardSlice.reducer;

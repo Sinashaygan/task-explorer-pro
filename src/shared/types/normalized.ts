@@ -1,28 +1,45 @@
-// types/normalized.ts
+export type Id = string;
 
-export type Id = string | number;
+export type Priority = "low" | "medium" | "high";
 
-export interface Card {
+export interface Board {
   id: Id;
-  columnId: Id;
   title: string;
-  description: string;
-  priority: "low" | "medium" | "high";
-  order: number; // جهت حفظ ترتیب کارت‌ها در دیتابیس آینده
+  description?: string;
+  columnIds: Id[];
   createdAt: string;
   updatedAt: string;
 }
 
 export interface Column {
   id: Id;
+  boardId: Id;
   title: string;
-  cardIds: Id[]; // منبع اصلی ترتیب کارت‌ها (Order Source of Truth) در سطح UI
+  cardIds: Id[];
   color?: string;
-  isCollapsed?: boolean;
+  isCollapsed: boolean;
+  createdAt: string;
+  updatedAt: string;
 }
 
-export interface Board {
+export interface Card {
   id: Id;
+  boardId: Id;
+  columnId: Id;
   title: string;
-  columnIds: Id[]; // ترتیب ستون‌ها روی برد
+  description?: string;
+  labels: string[];
+  priority: Priority;
+  assignee?: string;
+  dueDate?: string;
+  order: number;
+  createdAt: string;
+  updatedAt: string;
+  isArchived: boolean;
+}
+
+export interface BoardFilters {
+  searchText: string;
+  priorities: Priority[];
+  assignee?: string | null;
 }
