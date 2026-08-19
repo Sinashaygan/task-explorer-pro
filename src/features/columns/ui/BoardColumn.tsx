@@ -9,8 +9,9 @@ import { Column } from "@/src/shared/types/normalized";
 import { useAppDispatch, useAppSelector } from "@/src/store/hook";
 import { toggleColumnCollapse } from "@/src/store/slices/boardSlice";
 import { EmptyState } from "@/src/shared/ui/EmptyState";
-import { BoardCard } from "../../cards/ui/BoardCard";
-import { SortableContext, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
+import { SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable";
+import { useDroppable } from "@dnd-kit/core";
+import SortableCard from "../../cards/ui/SortableCard";
 
 interface BoardColumnProps {
   column: Column;
@@ -27,17 +28,18 @@ export function BoardColumn({ column }: BoardColumnProps) {
     dispatch(toggleColumnCollapse(column.id));
   };
 
-  const { setNodeRef, transform, transition, isDragging } = useSortable({
+  const { setNodeRef, isOver } = useDroppable({
     id: column.id,
     data: {
       type: "Column",
-      column,
+      columnId: column.id,
     },
   });
 
   if (column.isCollapsed) {
     return (
       <Paper
+        ref={setNodeRef}
         variant="outlined"
         sx={{
           width: 72,
@@ -89,7 +91,8 @@ export function BoardColumn({ column }: BoardColumnProps) {
         display: "flex",
         flexDirection: "column",
         overflow: "hidden",
-        opacity: isDragging ? 0.5 : 1,
+        outline: isOver ? "2px solid" : undefined,
+        outlineColor: isOver ? "primary.main" : undefined,
       }}
     >
       <Box
@@ -152,7 +155,7 @@ export function BoardColumn({ column }: BoardColumnProps) {
           strategy={verticalListSortingStrategy}
         >
           {cards.length > 0 ? (
-            cards.map((card) => <BoardCard key={card.id} card={card} />)
+            cards.map((card) => <SortableCard key={card.id} card={card} />)
           ) : (
             <EmptyState
               title="No cards"
