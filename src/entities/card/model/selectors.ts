@@ -21,6 +21,6 @@ export const selectCardsByColumnId = createSelector(
     
     return column.cardIds
       .map((cardId) => cardsEntities[cardId])
-      .filter((card): card is NonNullable<typeof card> => Boolean(card) && !card.isArchived);
+      .filter((card): card is NonNullable<typeof card> => Boolean(card));
   },
 );
