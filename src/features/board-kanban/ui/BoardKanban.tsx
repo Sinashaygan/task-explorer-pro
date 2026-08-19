@@ -8,7 +8,17 @@ import { Box, Stack, Typography } from "@mui/material";
 import { BoardColumn } from "../../columns/ui/BoardColumn";
 import { useState } from "react";
 import { Id } from "@/src/shared/types/normalized";
-import { KeyboardSensor, PointerSensor, useSensor, useSensors } from "@dnd-kit/core";
+import {
+  closestCorners,
+  DndContext,
+  DragEndEvent,
+  DragOverEvent,
+  DragStartEvent,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+} from "@dnd-kit/core";
 
 export function BoardKanban() {
   const dispatch = useAppDispatch();
@@ -19,8 +29,14 @@ export function BoardKanban() {
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
-    useSensor(KeyboardSensor)
+    useSensor(KeyboardSensor),
   );
+
+  const handleDragStart = (event: DragStartEvent) => {};
+
+  const handleDragEnd = (event: DragEndEvent) => {};
+
+  const handleDragOver = (event: DragOverEvent) => {};
 
   if (!board) {
     return (
@@ -52,35 +68,43 @@ export function BoardKanban() {
         ) : null}
       </Box>
 
-      <Box
-        sx={{
-          width: "100%",
-          overflowX: "auto",
-          overflowY: "hidden",
-          pb: 2,
-        }}
+      <DndContext
+        sensors={sensors}
+        collisionDetection={closestCorners}
+        onDragStart={handleDragStart}
+        onDragEnd={handleDragEnd}
+        onDragOver={handleDragOver}
       >
-        {columns.length > 0 ? (
-          <Stack
-            direction="row"
-            spacing={3}
-            sx={{
-              minWidth: "max-content",
+        <Box
+          sx={{
+            width: "100%",
+            overflowX: "auto",
+            overflowY: "hidden",
+            pb: 2,
+          }}
+        >
+          {columns.length > 0 ? (
+            <Stack
+              direction="row"
+              spacing={3}
+              sx={{
+                minWidth: "max-content",
 
-              alignItems: "flex-start",
-            }}
-          >
-            {columns.map((column) => (
-              <BoardColumn key={column.id} column={column} />
-            ))}
-          </Stack>
-        ) : (
-          <EmptyState
-            title="No columns"
-            description="Create your first column to organize cards."
-          />
-        )}
-      </Box>
+                alignItems: "flex-start",
+              }}
+            >
+              {columns.map((column) => (
+                <BoardColumn key={column.id} column={column} />
+              ))}
+            </Stack>
+          ) : (
+            <EmptyState
+              title="No columns"
+              description="Create your first column to organize cards."
+            />
+          )}
+        </Box>
+      </DndContext>
     </Stack>
   );
 }
