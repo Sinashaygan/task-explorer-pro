@@ -1,4 +1,10 @@
-import { Board, Card, Column, Id, Priority } from "@/src/shared/types/normalized";
+import {
+  Board,
+  Card,
+  Column,
+  Id,
+  Priority,
+} from "@/src/shared/types/normalized";
 import {
   createEntityAdapter,
   createSlice,
@@ -41,7 +47,6 @@ interface AddCardPayload {
   assignee?: string;
   dueDate?: string;
 }
-
 
 const boardSlice = createSlice({
   name: "board",
@@ -127,34 +132,44 @@ const boardSlice = createSlice({
       card.updatedAt = timestamp;
     },
 
-    addCard: (
-      state,
-      action: PayloadAction<{
-        id: Id;
-        columnId: Id;
-        title: string;
-        description: string;
-      }>,
-    ) => {
-      const { columnId, id, title, description } = action.payload;
+    addCard: (state, action: PayloadAction<AddCardPayload>) => {
+      const {
+        id,
+        boardId,
+        columnId,
+        title,
+        description = "",
+        labels = [],
+        priority,
+        assignee,
+        dueDate,
+      } = action.payload;
+
       const column = state.columns.entities[columnId];
 
       if (!column) return;
+      if (state.cards.entities[id]) return;
+      const now = new Date().toISOString();
 
       const card: Card = {
         id,
-        boardId:state.board?.id,
+        boardId,
         columnId,
-        title,
+        title: title.trim(),
         description,
+        labels: [...labels],
+        priority,
+        assignee,
+        dueDate,
+        order: column.cardIds.length,
+        createdAt: now,
+        updatedAt: now,
         isArchived: false,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
       };
 
       cardsAdapter.addOne(state.cards, card);
       column.cardIds.push(card.id);
-      column.updatedAt = new Date().toISOString();
+      column.updatedAt = now;
     },
   },
 });
