@@ -20,6 +20,7 @@ import {
   useSensors,
 } from "@dnd-kit/core";
 import { setActiveDragId } from "@/src/store/slices/uiSlice";
+import { moveCardBetweenColumns } from "@/src/store/slices/boardSlice";
 
 export function BoardKanban() {
   const dispatch = useAppDispatch();
@@ -34,15 +35,61 @@ export function BoardKanban() {
   );
 
   const handleDragStart = (event: DragStartEvent) => {
-    const {active} = event
-    const data = active.data.current
-    if(data?.type === 'Card'){
-      setActiveCardId(active.id)
+    const { active } = event;
+    const data = active.data.current;
+    if (data?.type === "Card") {
+      setActiveCardId(active.id);
       dispatch(setActiveDragId(active.id));
     }
   };
 
-  const handleDragEnd = (event: DragEndEvent) => {};
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (!over) {
+      return;
+    }
+
+    const activeId = active.id;
+    const overId = over.id;
+
+    const isActiveCard = active.data.current?.type === "Card";
+    const isOverACard = over.data.current?.type === "Card";
+    const isOverAColumn = over.data.current?.type === "Column";
+
+    if (!isActiveCard) return;
+
+    if (isOverACard) {
+      const activeCard = active.data.current?.card;
+      const overCard = over.data.current?.card;
+
+      if (activeCard.columnId !== overCard.columnId) {
+        dispatch(
+          moveCardBetweenColumns({
+            cardId: activeId,
+            overCardId: overId,
+            activeColumnId: activeCard.columnId,
+            overColumnId: overCard.columnId,
+            newIndex: over.data.current?.sortable.index,
+          }),
+        );
+      }
+
+      if (isOverAColumn) {
+        const activeCard = active.data.current?.card;
+        if (activeCard.columnId !== overId) {
+          dispatch(
+            moveCardBetweenColumns({
+              cardId: activeId,
+              overCardId: null,
+              activeColumnId: activeCard.columnId,
+              overColumnId: overId,
+              newIndex: 0,
+            }),
+          );
+        }
+      }
+    }
+  };
 
   const handleDragOver = (event: DragOverEvent) => {};
 
