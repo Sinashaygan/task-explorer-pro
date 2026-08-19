@@ -1,5 +1,4 @@
 import { Board, Card, Column, Id } from "@/src/shared/types/normalized";
-import { arrayMove } from "@dnd-kit/sortable";
 import {
   createEntityAdapter,
   createSlice,
@@ -58,17 +57,20 @@ const boardSlice = createSlice({
       state,
       action: PayloadAction<{
         columnId: Id;
-        oldIndex: number;
-        newIndex: number;
+        activeCardId: Id;
+        overCardId: Id;
       }>,
     ) => {
-      const { columnId, oldIndex, newIndex } = action.payload;
+      const { columnId, activeCardId, overCardId } = action.payload;
       const column = state.columns.entities[columnId];
 
-      if (column) {
-        column.cardIds = arrayMove(column.cardIds, oldIndex, newIndex);
-        column.updatedAt = new Date().toISOString();
-      }
+      if (!column) return;
+      const oldIndex = column.cardIds.indexOf(activeCardId);
+      const newIndex = column.cardIds.indexOf(overCardId);
+      if (oldIndex < 0 || newIndex < 0 || oldIndex === newIndex) return;
+      const [cardId] = column.cardIds.splice(oldIndex, 1);
+      column.cardIds.splice(newIndex, 0, cardId);
+      column.updatedAt = new Date().toISOString();
     },
 
     moveCardBetweenColumns: (
@@ -76,36 +78,44 @@ const boardSlice = createSlice({
       action: PayloadAction<{
         cardId: Id;
         overCardId: Id | null;
-        activeColumnId: Id;
         overColumnId: Id;
         newIndex: number;
       }>,
     ) => {
-      const { cardId, overCardId, activeColumnId, overColumnId, newIndex } =
-        action.payload;
-
-      const activeColumn = state.columns.entities[activeColumnId];
+      const { cardId, overCardId, overColumnId, newIndex } = action.payload;
       const overColumn = state.columns.entities[overColumnId];
       const card = state.cards.entities[cardId];
 
-      if (activeColumn && overColumn && card) {
-        activeColumn.cardIds = activeColumn.cardIds.filter(
-          (id) => id !== cardId,
-        );
+      if (!overColumn || !card) return;
+      const activeColumn = Object.values(state.columns.entities).find((column) =>
+        column?.cardIds.includes(cardId),
+      );
+      if (!activeColumn || activeColumn.id === overColumnId) return;
 
-        overColumn.cardIds.splice(newIndex, 0, cardId);
-
-        card.columnId = overColumnId;
-
-        activeColumn.updatedAt = new Date().toISOString();
-        overColumn.updatedAt = new Date().toISOString();
-        card.updatedAt = new Date().toISOString();
+      activeColumn.cardIds = activeColumn.cardIds.filter((id) => id !== cardId);
+      const requestedIndex = overCardId
+        ? overColumn.cardIds.indexOf(overCardId)
+        : newIndex;
+      const insertIndex = Math.max(
+        0,
+        Math.min(
+          requestedIndex < 0 ? overColumn.cardIds.length : requestedIndex,
+          overColumn.cardIds.length,
+        ),
+      );
+      if (!overColumn.cardIds.includes(cardId)) {
+        overColumn.cardIds.splice(insertIndex, 0, cardId);
       }
+      card.columnId = overColumnId;
+      const timestamp = new Date().toISOString();
+      activeColumn.updatedAt = timestamp;
+      overColumn.updatedAt = timestamp;
+      card.updatedAt = timestamp;
     },
   },
 });
 
-export const { initializeBoard, resetBoard, toggleColumnCollapse, moveCardBetweenColumns , reorderCards } =
+export const { initializeBoard, resetBoard, toggleColumnCollapse, moveCardBetweenColumns, reorderCards } =
   boardSlice.actions;
 
 export default boardSlice.reducer;
