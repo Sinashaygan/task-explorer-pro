@@ -1,37 +1,46 @@
 "use client";
 
-import { selectCurrentBoard } from "@/src/entities/board/model/selectors";
-import { selectBoardColumns } from "@/src/entities/column/model/selectors";
-import { EmptyState } from "@/src/shared/ui/EmptyState";
-import { useAppDispatch, useAppSelector } from "@/src/store/hook";
-import { Box, Stack, Typography } from "@mui/material";
-import { BoardColumn } from "../../columns/ui/BoardColumn";
-import { useState } from "react";
-import { Id } from "@/src/shared/types/normalized";
+import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import {
   closestCorners,
+  defaultDropAnimationSideEffects,
   DndContext,
   DragEndEvent,
   DragOverEvent,
   DragStartEvent,
+  DragOverlay,
   KeyboardSensor,
   PointerSensor,
   useSensor,
   useSensors,
 } from "@dnd-kit/core";
+import { Box, Stack, Typography } from "@mui/material";
+
+import { selectCurrentBoard } from "@/src/entities/board/model/selectors";
+import { selectBoardState } from "@/src/entities/board/model/selectors";
+import { selectBoardColumns } from "@/src/entities/column/model/selectors";
+import { selectCardById } from "@/src/entities/card/model/selectors";
+import { EmptyState } from "@/src/shared/ui/EmptyState";
+import { useAppDispatch, useAppSelector } from "@/src/store/hook";
 import { setActiveDragId } from "@/src/store/slices/uiSlice";
 import {
   moveCardBetweenColumns,
   reorderCards,
 } from "@/src/store/slices/boardSlice";
-import { selectCardById } from "@/src/entities/card/model/selectors";
+import { Id } from "@/src/shared/types/normalized";
+import { BoardColumn } from "../../columns/ui/BoardColumn";
+import { BoardCard } from "../../cards/ui/BoardCard";
 
 export function BoardKanban() {
   const dispatch = useAppDispatch();
   const board = useAppSelector(selectCurrentBoard);
   const columns = useAppSelector(selectBoardColumns);
+  const boardState = useAppSelector(selectBoardState);
 
   const [activeCardId, setActiveCardId] = useState<Id | null>(null);
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
@@ -49,12 +58,12 @@ export function BoardKanban() {
 
   const handleDragOver = (event: DragOverEvent) => {
     const { active, over } = event;
-    if (!over) {
-      return;
-    }
+    if (!over) return;
 
-    const activeId = active.id;
-    const overId = over.id;
+    const activeId = active.id as Id;
+    const overId = over.id as Id;
+
+    if (activeId === overId) return;
 
     const isActiveCard = active.data.current?.type === "Card";
     const isOverACard = over.data.current?.type === "Card";
@@ -63,34 +72,32 @@ export function BoardKanban() {
     if (!isActiveCard) return;
 
     if (isOverACard) {
-      const activeCard = active.data.current?.card;
-      const overCard = over.data.current?.card;
-
-      if (activeCard.columnId !== overCard.columnId) {
+      const activeCard = boardState.cards.entities[activeId];
+      const overCard = boardState.cards.entities[overId];
+      if (activeCard && overCard && activeCard.columnId !== overCard.columnId) {
         dispatch(
           moveCardBetweenColumns({
             cardId: activeId,
             overCardId: overId,
-            activeColumnId: activeCard.columnId,
             overColumnId: overCard.columnId,
-            newIndex: over.data.current?.sortable.index,
+            newIndex: 0,
           }),
         );
       }
+    }
 
-      if (isOverAColumn) {
-        const activeCard = active.data.current?.card;
-        if (activeCard.columnId !== overId) {
-          dispatch(
-            moveCardBetweenColumns({
-              cardId: activeId,
-              overCardId: null,
-              activeColumnId: activeCard.columnId,
-              overColumnId: overId,
-              newIndex: 0,
-            }),
-          );
-        }
+    if (isOverAColumn) {
+      const activeCard = boardState.cards.entities[activeId];
+      const targetColumn = boardState.columns.entities[overId];
+      if (activeCard && targetColumn && activeCard.columnId !== overId) {
+        dispatch(
+          moveCardBetweenColumns({
+            cardId: activeId,
+            overCardId: null,
+            overColumnId: overId,
+            newIndex: 0,
+          }),
+        );
       }
     }
   };
@@ -100,26 +107,32 @@ export function BoardKanban() {
     setActiveCardId(null);
     dispatch(setActiveDragId(null));
 
-    if (!over) return;
+    if (!over) {
+      return;
+    }
 
-    if (
-      active.id !== over.id &&
-      active.data.current?.type === "Card" &&
-      over.data.current?.type === "Card"
-    ) {
-      const activeCard = active.data.current.card;
-      const overCard = over.data.current.card;
+    const isActiveCard = active.data.current?.type === "Card";
+    const isOverACard = over.data.current?.type === "Card";
 
-      if (activeCard.columnId === overCard.columnId) {
+    if (active.id !== over.id && isActiveCard && isOverACard) {
+      const activeCard = boardState.cards.entities[active.id as Id];
+      const overCard = boardState.cards.entities[over.id as Id];
+
+      if (activeCard && overCard && activeCard.columnId === overCard.columnId) {
         dispatch(
           reorderCards({
             columnId: activeCard.columnId,
-            oldIndex: active.data.current.sortable.index,
-            newIndex: over.data.current.sortable.index,
+            activeCardId: active.id as Id,
+            overCardId: over.id as Id,
           }),
         );
       }
     }
+  };
+
+  const handleDragCancel = () => {
+    setActiveCardId(null);
+    dispatch(setActiveDragId(null));
   };
 
   const activeCard = useAppSelector((state) =>
@@ -160,25 +173,18 @@ export function BoardKanban() {
         sensors={sensors}
         collisionDetection={closestCorners}
         onDragStart={handleDragStart}
-        onDragEnd={handleDragEnd}
         onDragOver={handleDragOver}
+        onDragEnd={handleDragEnd}
+        onDragCancel={handleDragCancel}
       >
-        <Box
-          sx={{
-            width: "100%",
-            overflowX: "auto",
-            overflowY: "hidden",
-            pb: 2,
-          }}
-        >
+        <Box sx={{ overflowX: "auto", pb: 2 }}>
           {columns.length > 0 ? (
             <Stack
               direction="row"
               spacing={3}
               sx={{
-                minWidth: "max-content",
-
                 alignItems: "flex-start",
+                minWidth: "max-content",
               }}
             >
               {columns.map((column) => (
@@ -192,6 +198,25 @@ export function BoardKanban() {
             />
           )}
         </Box>
+
+        {/* نمایش کارت معلق هنگام درگ (بسیار مهم برای UX عالی) */}
+        {mounted && typeof document !== "undefined" &&
+          createPortal(
+            <DragOverlay
+              dropAnimation={{
+                sideEffects: defaultDropAnimationSideEffects({
+                  styles: { active: { opacity: "0.5" } },
+                }),
+              }}
+            >
+              {activeCard ? (
+                  <Box sx={{ transform: "rotate(3deg)", cursor: "grabbing" }}>
+                  <BoardCard card={activeCard} />
+                </Box>
+              ) : null}
+            </DragOverlay>,
+            document.body,
+          )}
       </DndContext>
     </Stack>
   );
