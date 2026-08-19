@@ -36,26 +36,30 @@ interface InitializeBoardPayload {
 }
 
 interface AddCardPayload {
-  id: Id;
-  boardId: Id;
   columnId: Id;
   title: string;
-  description?: string;
-  labels?: string[];
+  description: string;
+  labels: string[];
   priority: Priority;
-  assignee?: string;
-  dueDate?: string;
+  assignee: string;
+  dueDate: string;
 }
 
-interface updateCardPayload {
+interface UpdateCardPayload {
   id: Id;
   title: string;
-  description?: string;
-  labels?: string[];
+  description: string;
+  labels: string[];
   priority: Priority;
-  assignee?: string;
-  dueDate?: string;
+  assignee: string;
+  dueDate: string;
+  isArchived: boolean;
 }
+
+const createId = (): Id =>
+  typeof globalThis.crypto?.randomUUID === "function"
+    ? globalThis.crypto.randomUUID()
+    : `card-${Date.now()}-${Math.random().toString(36).slice(2)}`;
 
 const boardSlice = createSlice({
   name: "board",
@@ -143,33 +147,33 @@ const boardSlice = createSlice({
 
     addCard: (state, action: PayloadAction<AddCardPayload>) => {
       const {
-        id,
-        boardId,
         columnId,
         title,
-        description = "",
-        labels = [],
+        description,
+        labels,
         priority,
         assignee,
         dueDate,
       } = action.payload;
 
       const column = state.columns.entities[columnId];
+      const board = state.board;
 
-      if (!column) return;
+      if (!column || !board) return;
+      const id = createId();
       if (state.cards.entities[id]) return;
       const now = new Date().toISOString();
 
       const card: Card = {
         id,
-        boardId,
+        boardId: board.id,
         columnId,
         title: title.trim(),
-        description,
-        labels: [...labels],
+        description: description.trim(),
+        labels: [...new Set(labels.map((label) => label.trim()).filter(Boolean))],
         priority,
-        assignee,
-        dueDate,
+        assignee: assignee.trim() || undefined,
+        dueDate: dueDate || undefined,
         order: column.cardIds.length,
         createdAt: now,
         updatedAt: now,
@@ -181,8 +185,17 @@ const boardSlice = createSlice({
       column.updatedAt = now;
     },
 
-    updateCard: (state, action: PayloadAction<updateCardPayload>) => {
-      const { id, priority, title, assignee, description, dueDate, labels } =
+    updateCard: (state, action: PayloadAction<UpdateCardPayload>) => {
+      const {
+        id,
+        priority,
+        title,
+        assignee,
+        description,
+        dueDate,
+        labels,
+        isArchived,
+      } =
         action.payload;
 
       const card = state.cards.entities[id];
@@ -190,11 +203,12 @@ const boardSlice = createSlice({
       const now = new Date().toISOString();
 
       card.title = title.trim();
-      card.description = description ?? card.description;
-      card.labels = labels ? [...labels] : card.labels;
+      card.description = description.trim();
+      card.labels = [...new Set(labels.map((label) => label.trim()).filter(Boolean))];
       card.priority = priority;
-      card.assignee = assignee;
-      card.dueDate = dueDate;
+      card.assignee = assignee.trim() || undefined;
+      card.dueDate = dueDate || undefined;
+      card.isArchived = isArchived;
       card.updatedAt = now;
     },
 
