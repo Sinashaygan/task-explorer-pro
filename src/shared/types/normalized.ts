@@ -2,7 +2,7 @@ import { UniqueIdentifier } from "@dnd-kit/core";
 
 export type Id = UniqueIdentifier;
 
-export type Priority = "low" | "medium" | "high";
+export type Priority = "low" | "medium" | "high" | "urgent";
 
 export interface Board {
   id: Id;
