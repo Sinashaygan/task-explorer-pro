@@ -197,6 +197,33 @@ const boardSlice = createSlice({
       card.dueDate = dueDate;
       card.updatedAt = now;
     },
+
+    deleteCard: (state, action: PayloadAction<{ id: Id }>) => {
+      const { id } = action.payload;
+
+      const card = state.cards.entities[id];
+      if (!card) return;
+
+      const column = state.columns.entities[card.columnId];
+      const now = new Date().toISOString();
+
+      if (column) {
+        column.cardIds = column.cardIds.filter((cardId) => cardId !== id);
+
+        column.cardIds.forEach((cardId, index) => {
+          const remainingCard = state.cards.entities[cardId];
+
+          if (remainingCard) {
+            remainingCard.order = index;
+            remainingCard.updatedAt = now;
+          }
+        });
+
+        column.updatedAt = now;
+      }
+
+      cardsAdapter.removeOne(state.cards, id);
+    },
   },
 });
 
@@ -208,6 +235,7 @@ export const {
   reorderCards,
   addCard,
   updateCard,
+  deleteCard,
 } = boardSlice.actions;
 
 export default boardSlice.reducer;
