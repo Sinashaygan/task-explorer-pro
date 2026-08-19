@@ -1,4 +1,5 @@
 import { Board, Card, Column, Id } from "@/src/shared/types/normalized";
+import { arrayMove } from "@dnd-kit/sortable";
 import {
   createEntityAdapter,
   createSlice,
@@ -51,6 +52,23 @@ const boardSlice = createSlice({
 
       column.isCollapsed = !column.isCollapsed;
       column.updatedAt = new Date().toISOString();
+    },
+
+    reorderCards: (
+      state,
+      action: PayloadAction<{
+        columnId: Id;
+        oldIndex: number;
+        newIndex: number;
+      }>,
+    ) => {
+      const { columnId, oldIndex, newIndex } = action.payload;
+      const column = state.columns.entities[columnId];
+
+      if (column) {
+        column.cardIds = arrayMove(column.cardIds, oldIndex, newIndex);
+        column.updatedAt = new Date().toISOString();
+      }
     },
   },
 });
