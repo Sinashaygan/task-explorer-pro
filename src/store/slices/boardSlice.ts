@@ -1,4 +1,4 @@
-import { Board, Card, Column, Id } from "@/src/shared/types/normalized";
+import { Board, Card, Column, Id, Priority } from "@/src/shared/types/normalized";
 import {
   createEntityAdapter,
   createSlice,
@@ -28,6 +28,20 @@ interface InitializeBoardPayload {
   columns: Column[];
   cards: Card[];
 }
+
+interface AddCardPayload {
+  id: Id;
+  boardId: Id;
+  columnId: Id;
+  title: string;
+
+  description?: string;
+  labels?: string[];
+  priority: Priority;
+  assignee?: string;
+  dueDate?: string;
+}
+
 
 const boardSlice = createSlice({
   name: "board",
@@ -87,8 +101,8 @@ const boardSlice = createSlice({
       const card = state.cards.entities[cardId];
 
       if (!overColumn || !card) return;
-      const activeColumn = Object.values(state.columns.entities).find((column) =>
-        column?.cardIds.includes(cardId),
+      const activeColumn = Object.values(state.columns.entities).find(
+        (column) => column?.cardIds.includes(cardId),
       );
       if (!activeColumn || activeColumn.id === overColumnId) return;
 
@@ -112,10 +126,45 @@ const boardSlice = createSlice({
       overColumn.updatedAt = timestamp;
       card.updatedAt = timestamp;
     },
+
+    addCard: (
+      state,
+      action: PayloadAction<{
+        id: Id;
+        columnId: Id;
+        title: string;
+        description: string;
+      }>,
+    ) => {
+      const { columnId, id, title, description } = action.payload;
+      const column = state.columns.entities[columnId];
+
+      if (!column) return;
+
+      const card: Card = {
+        id,
+        boardId:state.board?.id,
+        columnId,
+        title,
+        description,
+        isArchived: false,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
+
+      cardsAdapter.addOne(state.cards, card);
+      column.cardIds.push(card.id);
+      column.updatedAt = new Date().toISOString();
+    },
   },
 });
 
-export const { initializeBoard, resetBoard, toggleColumnCollapse, moveCardBetweenColumns, reorderCards } =
-  boardSlice.actions;
+export const {
+  initializeBoard,
+  resetBoard,
+  toggleColumnCollapse,
+  moveCardBetweenColumns,
+  reorderCards,
+} = boardSlice.actions;
 
 export default boardSlice.reducer;
