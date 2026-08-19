@@ -52,10 +52,70 @@ const boardSlice = createSlice({
       column.isCollapsed = !column.isCollapsed;
       column.updatedAt = new Date().toISOString();
     },
+
+    reorderCards: (
+      state,
+      action: PayloadAction<{
+        columnId: Id;
+        activeCardId: Id;
+        overCardId: Id;
+      }>,
+    ) => {
+      const { columnId, activeCardId, overCardId } = action.payload;
+      const column = state.columns.entities[columnId];
+
+      if (!column) return;
+      const oldIndex = column.cardIds.indexOf(activeCardId);
+      const newIndex = column.cardIds.indexOf(overCardId);
+      if (oldIndex < 0 || newIndex < 0 || oldIndex === newIndex) return;
+      const [cardId] = column.cardIds.splice(oldIndex, 1);
+      column.cardIds.splice(newIndex, 0, cardId);
+      column.updatedAt = new Date().toISOString();
+    },
+
+    moveCardBetweenColumns: (
+      state,
+      action: PayloadAction<{
+        cardId: Id;
+        overCardId: Id | null;
+        overColumnId: Id;
+        newIndex: number;
+      }>,
+    ) => {
+      const { cardId, overCardId, overColumnId, newIndex } = action.payload;
+      const overColumn = state.columns.entities[overColumnId];
+      const card = state.cards.entities[cardId];
+
+      if (!overColumn || !card) return;
+      const activeColumn = Object.values(state.columns.entities).find((column) =>
+        column?.cardIds.includes(cardId),
+      );
+      if (!activeColumn || activeColumn.id === overColumnId) return;
+
+      activeColumn.cardIds = activeColumn.cardIds.filter((id) => id !== cardId);
+      const requestedIndex = overCardId
+        ? overColumn.cardIds.indexOf(overCardId)
+        : newIndex;
+      const insertIndex = Math.max(
+        0,
+        Math.min(
+          requestedIndex < 0 ? overColumn.cardIds.length : requestedIndex,
+          overColumn.cardIds.length,
+        ),
+      );
+      if (!overColumn.cardIds.includes(cardId)) {
+        overColumn.cardIds.splice(insertIndex, 0, cardId);
+      }
+      card.columnId = overColumnId;
+      const timestamp = new Date().toISOString();
+      activeColumn.updatedAt = timestamp;
+      overColumn.updatedAt = timestamp;
+      card.updatedAt = timestamp;
+    },
   },
 });
 
-export const { initializeBoard, resetBoard, toggleColumnCollapse } =
+export const { initializeBoard, resetBoard, toggleColumnCollapse, moveCardBetweenColumns, reorderCards } =
   boardSlice.actions;
 
 export default boardSlice.reducer;

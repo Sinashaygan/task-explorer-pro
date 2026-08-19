@@ -9,7 +9,9 @@ import { Column } from "@/src/shared/types/normalized";
 import { useAppDispatch, useAppSelector } from "@/src/store/hook";
 import { toggleColumnCollapse } from "@/src/store/slices/boardSlice";
 import { EmptyState } from "@/src/shared/ui/EmptyState";
-import { BoardCard } from "../../cards/ui/BoardCard";
+import { SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable";
+import { useDroppable } from "@dnd-kit/core";
+import SortableCard from "../../cards/ui/SortableCard";
 
 interface BoardColumnProps {
   column: Column;
@@ -26,9 +28,18 @@ export function BoardColumn({ column }: BoardColumnProps) {
     dispatch(toggleColumnCollapse(column.id));
   };
 
+  const { setNodeRef, isOver } = useDroppable({
+    id: column.id,
+    data: {
+      type: "Column",
+      columnId: column.id,
+    },
+  });
+
   if (column.isCollapsed) {
     return (
       <Paper
+        ref={setNodeRef}
         variant="outlined"
         sx={{
           width: 72,
@@ -69,6 +80,7 @@ export function BoardColumn({ column }: BoardColumnProps) {
 
   return (
     <Paper
+      ref={setNodeRef}
       variant="outlined"
       sx={{
         width: 320,
@@ -79,6 +91,8 @@ export function BoardColumn({ column }: BoardColumnProps) {
         display: "flex",
         flexDirection: "column",
         overflow: "hidden",
+        outline: isOver ? "2px solid" : undefined,
+        outlineColor: isOver ? "primary.main" : undefined,
       }}
     >
       <Box
@@ -96,7 +110,7 @@ export function BoardColumn({ column }: BoardColumnProps) {
             justifyContent: "space-between",
           }}
         >
-          <Stack direction="row" spacing={1.25} sx={{ alignItems :"center" }}>
+          <Stack direction="row" spacing={1.25} sx={{ alignItems: "center" }}>
             <Box
               sx={{
                 width: 10,
@@ -106,7 +120,7 @@ export function BoardColumn({ column }: BoardColumnProps) {
               }}
             />
 
-            <Typography sx={{fontWeight:800}}>{column.title}</Typography>
+            <Typography sx={{ fontWeight: 800 }}>{column.title}</Typography>
 
             <Typography
               variant="caption"
@@ -136,14 +150,19 @@ export function BoardColumn({ column }: BoardColumnProps) {
           flex: 1,
         }}
       >
-        {cards.length > 0 ? (
-          cards.map((card) => <BoardCard key={card.id} card={card} />)
-        ) : (
-          <EmptyState
-            title="No cards"
-            description="Cards moved here will appear in this column."
-          />
-        )}
+        <SortableContext
+          items={cards.map((c) => c.id)}
+          strategy={verticalListSortingStrategy}
+        >
+          {cards.length > 0 ? (
+            cards.map((card) => <SortableCard key={card.id} card={card} />)
+          ) : (
+            <EmptyState
+              title="No cards"
+              description="Cards moved here will appear in this column."
+            />
+          )}
+        </SortableContext>
       </Stack>
     </Paper>
   );
