@@ -2,23 +2,17 @@
 
 import { useEffect } from "react";
 
-import { Box, Button, Container, Stack, Typography } from "@mui/material";
-import { useAppDispatch, useAppSelector } from "../src/store/hook";
-import { initializeBoard } from "../src/store/slices/boardSlice";
-import {
-  sampleBoard,
-  sampleCards,
-  sampleColumns,
-} from "../src/entities/board/model/sampleBoard";
+import { Box, Container } from "@mui/material";
+import { BoardKanban } from "@/src/features/board-kanban/ui/BoardKanban";
+import { initializeBoard } from "@/src/store/slices/boardSlice";
+import { sampleBoard, sampleCards, sampleColumns } from "@/src/entities/board/model/sampleBoard";
+import { useAppDispatch, useAppSelector } from "@/src/store/hook";
+import { selectBoardState } from "@/src/entities/board/model/selectors";
+
 
 export default function HomePage() {
   const dispatch = useAppDispatch();
-
-  const board = useAppSelector((state) => state.board.board);
-  const columnsCount = useAppSelector(
-    (state) => state.board.columns.ids.length,
-  );
-  const cardsCount = useAppSelector((state) => state.board.cards.ids.length);
+  const board = useAppSelector(selectBoardState);
 
   useEffect(() => {
     if (!board) {
@@ -33,28 +27,18 @@ export default function HomePage() {
   }, [board, dispatch]);
 
   return (
-    <Container maxWidth="xl">
+    <Container maxWidth={false}>
       <Box
         sx={{
-          py: 6,
+          py: 4,
+          px: {
+            xs: 1,
+            sm: 2,
+            md: 3,
+          },
         }}
       >
-        <Stack spacing={4}>
-          <Box>
-            <Typography variant="h4" sx={{ fontWeight: 800 }}>
-              {board?.title ?? "Kanban Board"}
-            </Typography>
-
-            <Typography color="text.secondary" sx={{ mt: 1 }}>
-              Bootstrap phase is ready.
-            </Typography>
-          </Box>
-
-          <Stack direction="row" spacing={2}>
-            <Button variant="contained">Columns: {columnsCount}</Button>
-            <Button variant="outlined">Cards: {cardsCount}</Button>
-          </Stack>
-        </Stack>
+        <BoardKanban />
       </Box>
     </Container>
   );
