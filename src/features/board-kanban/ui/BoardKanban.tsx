@@ -20,7 +20,11 @@ import {
   useSensors,
 } from "@dnd-kit/core";
 import { setActiveDragId } from "@/src/store/slices/uiSlice";
-import { moveCardBetweenColumns } from "@/src/store/slices/boardSlice";
+import {
+  moveCardBetweenColumns,
+  reorderCards,
+} from "@/src/store/slices/boardSlice";
+import { selectCardById } from "@/src/entities/card/model/selectors";
 
 export function BoardKanban() {
   const dispatch = useAppDispatch();
@@ -43,7 +47,7 @@ export function BoardKanban() {
     }
   };
 
-  const handleDragEnd = (event: DragEndEvent) => {
+  const handleDragOver = (event: DragOverEvent) => {
     const { active, over } = event;
     if (!over) {
       return;
@@ -91,7 +95,36 @@ export function BoardKanban() {
     }
   };
 
-  const handleDragOver = (event: DragOverEvent) => {};
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    setActiveCardId(null);
+    dispatch(setActiveDragId(null));
+
+    if (!over) return;
+
+    if (
+      active.id !== over.id &&
+      active.data.current?.type === "Card" &&
+      over.data.current?.type === "Card"
+    ) {
+      const activeCard = active.data.current.card;
+      const overCard = over.data.current.card;
+
+      if (activeCard.columnId === overCard.columnId) {
+        dispatch(
+          reorderCards({
+            columnId: activeCard.columnId,
+            oldIndex: active.data.current.sortable.index,
+            newIndex: over.data.current.sortable.index,
+          }),
+        );
+      }
+    }
+  };
+
+  const activeCard = useAppSelector((state) =>
+    activeCardId ? selectCardById(state, activeCardId) : null,
+  );
 
   if (!board) {
     return (
