@@ -1,9 +1,24 @@
-import { Box, Chip, Paper, Stack, Typography } from "@mui/material";
+"use client";
+
+import MoreVertRoundedIcon from "@mui/icons-material/MoreVertRounded";
+import {
+  Box,
+  Chip,
+  IconButton,
+  Menu,
+  MenuItem,
+  Paper,
+  Stack,
+  Typography,
+} from "@mui/material";
+import { useState } from "react";
 
 import { Card } from "@/src/shared/types/normalized";
 
 interface BoardCardProps {
   card: Card;
+  onEdit: () => void;
+  onDelete: () => void;
 }
 
 const priorityColorMap: Record<
@@ -15,7 +30,30 @@ const priorityColorMap: Record<
   high: "error",
 };
 
-export function BoardCard({ card }: BoardCardProps) {
+export function BoardCard({ card, onEdit, onDelete }: BoardCardProps) {
+  const [menuAnchor, setMenuAnchor] = useState<null | HTMLElement>(null);
+
+  const isMenuOpen = Boolean(menuAnchor);
+
+  const handleOpenMenu = (event: React.MouseEvent<HTMLElement>) => {
+    event.stopPropagation();
+    setMenuAnchor(event.currentTarget);
+  };
+
+  const handleCloseMenu = () => {
+    setMenuAnchor(null);
+  };
+
+  const handleEdit = () => {
+    handleCloseMenu();
+    onEdit();
+  };
+
+  const handleDelete = () => {
+    handleCloseMenu();
+    onDelete();
+  };
+
   return (
     <Paper
       variant="outlined"
@@ -33,14 +71,45 @@ export function BoardCard({ card }: BoardCardProps) {
       }}
     >
       <Stack spacing={1.5}>
-        <Typography
+        <Stack
+          direction="row"
+          spacing={1}
           sx={{
-            lineHeight: 1.6,
-            fontWeight:700
+            alignItems: "flex-start",
+            justifyContent: "space-between",
           }}
         >
-          {card.title}
-        </Typography>
+          <Typography
+            sx={{
+              lineHeight: 1.6,
+              fontWeight: 700,
+              minWidth: 0,
+              overflowWrap: "anywhere",
+            }}
+          >
+            {card.title}
+          </Typography>
+
+          <IconButton
+            size="small"
+            aria-label="card actions"
+            onClick={handleOpenMenu}
+          >
+            <MoreVertRoundedIcon fontSize="small" />
+          </IconButton>
+
+          <Menu
+            anchorEl={menuAnchor}
+            open={isMenuOpen}
+            onClose={handleCloseMenu}
+          >
+            <MenuItem onClick={handleEdit}>Edit</MenuItem>
+
+            <MenuItem onClick={handleDelete} sx={{ color: "error.main" }}>
+              Delete
+            </MenuItem>
+          </Menu>
+        </Stack>
 
         {card.description ? (
           <Typography
@@ -62,9 +131,9 @@ export function BoardCard({ card }: BoardCardProps) {
           spacing={1}
           useFlexGap
           sx={{
-            alignItems:"center",
-            flexDirection:"row",
-            flexWrap:"wrap"
+            alignItems: "center",
+            flexDirection: "row",
+            flexWrap: "wrap",
           }}
         >
           <Chip
@@ -80,9 +149,7 @@ export function BoardCard({ card }: BoardCardProps) {
               size="small"
               label={label}
               variant="filled"
-              sx={{
-                bgcolor: "grey.100",
-              }}
+              sx={{ bgcolor: "grey.100" }}
             />
           ))}
         </Stack>
