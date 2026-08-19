@@ -6,10 +6,17 @@ import { BoardCard } from "./BoardCard";
 
 interface SortableCardProps {
   card: Card;
-  isOverlay?: boolean;
+  onEdit: () => void;
+  onDelete: () => void;
+  isOverlay: boolean;
 }
 
-export default function SortableCard({ card, isOverlay }: SortableCardProps) {
+export default function SortableCard({
+  card,
+  isOverlay,
+  onEdit,
+  onDelete,
+}: SortableCardProps) {
   const {
     attributes,
     listeners,
@@ -36,7 +43,7 @@ export default function SortableCard({ card, isOverlay }: SortableCardProps) {
         touchAction: "none",
       }}
     >
-      <BoardCard card={card} />
+      <BoardCard card={card} onEdit={onEdit} onDelete={onDelete} />
     </Box>
   );
 }
