@@ -1,6 +1,13 @@
 import type { Metadata } from "next";
+import { Vazirmatn } from "next/font/google";
 
 import { AppProviders } from "./providers";
+
+const vazirmatn = Vazirmatn({
+  subsets: ["arabic", "latin"],
+  variable: "--font-vazirmatn",
+  display: "swap",
+});
 
 export const metadata: Metadata = {
   title: "Kanban Board",
@@ -14,7 +21,7 @@ interface RootLayoutProps {
 export default function RootLayout({ children }: RootLayoutProps) {
   return (
     <html lang="fa">
-      <body>
+      <body className={vazirmatn.variable}>
         <AppProviders>{children}</AppProviders>
       </body>
     </html>
