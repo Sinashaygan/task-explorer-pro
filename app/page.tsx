@@ -7,12 +7,12 @@ import { BoardKanban } from "@/src/features/board-kanban/ui/BoardKanban";
 import { initializeBoard } from "@/src/store/slices/boardSlice";
 import { sampleBoard, sampleCards, sampleColumns } from "@/src/entities/board/model/sampleBoard";
 import { useAppDispatch, useAppSelector } from "@/src/store/hook";
-import { selectBoardState } from "@/src/entities/board/model/selectors";
+import { selectCurrentBoard } from "@/src/entities/board/model/selectors";
 
 
 export default function HomePage() {
   const dispatch = useAppDispatch();
-  const board = useAppSelector(selectBoardState);
+  const board = useAppSelector(selectCurrentBoard);
 
   useEffect(() => {
     if (!board) {
