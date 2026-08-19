@@ -19,6 +19,7 @@ import {
   useSensor,
   useSensors,
 } from "@dnd-kit/core";
+import { setActiveDragId } from "@/src/store/slices/uiSlice";
 
 export function BoardKanban() {
   const dispatch = useAppDispatch();
@@ -32,7 +33,14 @@ export function BoardKanban() {
     useSensor(KeyboardSensor),
   );
 
-  const handleDragStart = (event: DragStartEvent) => {};
+  const handleDragStart = (event: DragStartEvent) => {
+    const {active} = event
+    const data = active.data.current
+    if(data?.type === 'Card'){
+      setActiveCardId(active.id)
+      dispatch(setActiveDragId(active.id));
+    }
+  };
 
   const handleDragEnd = (event: DragEndEvent) => {};
 
