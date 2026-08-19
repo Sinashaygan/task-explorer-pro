@@ -70,10 +70,42 @@ const boardSlice = createSlice({
         column.updatedAt = new Date().toISOString();
       }
     },
+
+    moveCardBetweenColumns: (
+      state,
+      action: PayloadAction<{
+        cardId: Id;
+        overCardId: Id | null;
+        activeColumnId: Id;
+        overColumnId: Id;
+        newIndex: number;
+      }>,
+    ) => {
+      const { cardId, overCardId, activeColumnId, overColumnId, newIndex } =
+        action.payload;
+
+      const activeColumn = state.columns.entities[activeColumnId];
+      const overColumn = state.columns.entities[overColumnId];
+      const card = state.cards.entities[cardId];
+
+      if (activeColumn && overColumn && card) {
+        activeColumn.cardIds = activeColumn.cardIds.filter(
+          (id) => id !== cardId,
+        );
+
+        overColumn.cardIds.splice(newIndex, 0, cardId);
+
+        card.columnId = overColumnId;
+
+        activeColumn.updatedAt = new Date().toISOString();
+        overColumn.updatedAt = new Date().toISOString();
+        card.updatedAt = new Date().toISOString();
+      }
+    },
   },
 });
 
-export const { initializeBoard, resetBoard, toggleColumnCollapse } =
+export const { initializeBoard, resetBoard, toggleColumnCollapse, moveCardBetweenColumns , reorderCards } =
   boardSlice.actions;
 
 export default boardSlice.reducer;
