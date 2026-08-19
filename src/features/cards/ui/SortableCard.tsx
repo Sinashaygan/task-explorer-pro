@@ -1,5 +1,8 @@
 import { Card } from "@/src/shared/types/normalized";
 import { useSortable } from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
+import { Box } from "@mui/material";
+import { BoardCard } from "./BoardCard";
 
 interface SortableCardProps {
   card: Card;
@@ -16,5 +19,24 @@ export default function SortableCard({ card, isOverlay }: SortableCardProps) {
     isDragging,
   } = useSortable({ id: card.id, data: { type: "Card", card } });
 
-  return <div>SortableCard</div>;
+  const style = {
+    transition,
+    transform: CSS.Transform.toString(transform),
+    opacity: isDragging ? 0.3 : 1,
+  };
+
+  return (
+    <Box
+      ref={setNodeRef}
+      style={style}
+      {...attributes}
+      {...listeners}
+      sx={{
+        cursor: isDragging ? "grabbing" : "grab",
+        touchAction: "none",
+      }}
+    >
+      <BoardCard card={card} />
+    </Box>
+  );
 }
