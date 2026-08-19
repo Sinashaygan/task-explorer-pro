@@ -48,6 +48,7 @@ interface AddCardPayload {
 }
 
 interface updateCardPayload {
+  id: Id;
   title: string;
   description?: string;
   labels?: string[];
@@ -180,7 +181,22 @@ const boardSlice = createSlice({
       column.updatedAt = now;
     },
 
-    updateCard: (state, action: PayloadAction<updateCardPayload>) => {},
+    updateCard: (state, action: PayloadAction<updateCardPayload>) => {
+      const { id, priority, title, assignee, description, dueDate, labels } =
+        action.payload;
+
+      const card = state.cards.entities[id];
+      if (!card) return;
+      const now = new Date().toISOString();
+
+      card.title = title.trim();
+      card.description = description ?? card.description;
+      card.labels = labels ? [...labels] : card.labels;
+      card.priority = priority;
+      card.assignee = assignee;
+      card.dueDate = dueDate;
+      card.updatedAt = now;
+    },
   },
 });
 
