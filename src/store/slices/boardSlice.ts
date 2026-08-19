@@ -40,7 +40,15 @@ interface AddCardPayload {
   boardId: Id;
   columnId: Id;
   title: string;
+  description?: string;
+  labels?: string[];
+  priority: Priority;
+  assignee?: string;
+  dueDate?: string;
+}
 
+interface updateCardPayload {
+  title: string;
   description?: string;
   labels?: string[];
   priority: Priority;
@@ -171,6 +179,8 @@ const boardSlice = createSlice({
       column.cardIds.push(card.id);
       column.updatedAt = now;
     },
+
+    updateCard: (state, action: PayloadAction<updateCardPayload>) => {},
   },
 });
 
@@ -180,6 +190,8 @@ export const {
   toggleColumnCollapse,
   moveCardBetweenColumns,
   reorderCards,
+  addCard,
+  updateCard,
 } = boardSlice.actions;
 
 export default boardSlice.reducer;
