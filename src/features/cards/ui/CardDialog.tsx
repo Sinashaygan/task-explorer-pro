@@ -19,6 +19,11 @@ interface CardDialogProps {
 const emptyCardValues: CardFormValue = {
   title: "",
   description: "",
+  labels: [],
+  priority: "medium",
+  assignee: "",
+  dueDate: "",
+  isArchived: false,
 };
 
 export function CardDialog({
@@ -33,13 +38,24 @@ export function CardDialog({
       ? {
           title: card.title,
           description: card.description ?? "",
+          labels: card.labels,
+          priority: card.priority,
+          assignee: card.assignee ?? "",
+          dueDate: card.dueDate ?? "",
+          isArchived: card.isArchived,
         }
       : emptyCardValues;
 
   const isEditMode = mode === "edit";
 
   return (
-    <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm">
+    <Dialog
+      open={open}
+      onClose={onClose}
+      fullWidth
+      maxWidth="sm"
+      sx={{ "& .MuiDialog-paper": { m: { xs: 1, sm: 2 }, width: "100%" } }}
+    >
       <DialogTitle>{isEditMode ? "Edit card" : "Add card"}</DialogTitle>
 
       <CardForm
@@ -48,6 +64,7 @@ export function CardDialog({
         submitLabel={isEditMode ? "Save changes" : "Add card"}
         onSubmit={onSubmit}
         onCancel={onClose}
+        showArchiveControl={isEditMode}
       />
     </Dialog>
   );
