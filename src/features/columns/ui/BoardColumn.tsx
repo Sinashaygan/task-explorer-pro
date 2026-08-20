@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 import AddRoundedIcon from "@mui/icons-material/AddRounded";
 import KeyboardArrowDownRoundedIcon from "@mui/icons-material/KeyboardArrowDownRounded";
@@ -44,10 +44,9 @@ import SortableCard from "../../cards/ui/SortableCard";
 
 interface BoardColumnProps {
   column: Column;
-  boardId: Id;
 }
 
-export function BoardColumn({ column, boardId }: BoardColumnProps) {
+export function BoardColumn({ column }: BoardColumnProps) {
   const dispatch = useAppDispatch();
 
   const cards = useAppSelector((state) =>
@@ -55,9 +54,7 @@ export function BoardColumn({ column, boardId }: BoardColumnProps) {
   );
 
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
-
   const [editingCardId, setEditingCardId] = useState<Id | null>(null);
-
   const [deletingCardId, setDeletingCardId] = useState<Id | null>(null);
 
   const editingCard = useAppSelector((state) =>
@@ -84,13 +81,13 @@ export function BoardColumn({ column, boardId }: BoardColumnProps) {
   const handleCreateCard = (values: CardFormValue) => {
     dispatch(
       addCard({
-        id: crypto.randomUUID(),
-        boardId,
         columnId: column.id,
         title: values.title,
         description: values.description,
-        labels: [],
-        priority: "medium",
+        labels: values.labels,
+        priority: values.priority,
+        assignee: values.assignee,
+        dueDate: values.dueDate,
       }),
     );
 
@@ -116,10 +113,11 @@ export function BoardColumn({ column, boardId }: BoardColumnProps) {
         id: editingCard.id,
         title: values.title,
         description: values.description,
-        labels: editingCard.labels,
-        priority: editingCard.priority,
-        assignee: editingCard.assignee,
-        dueDate: editingCard.dueDate,
+        labels: values.labels,
+        priority: values.priority,
+        assignee: values.assignee,
+        dueDate: values.dueDate,
+        isArchived: values.isArchived,
       }),
     );
 
@@ -332,7 +330,7 @@ export function BoardColumn({ column, boardId }: BoardColumnProps) {
         </Paper>
       )}
 
-      <CardDialog
+        <CardDialog
         open={isCreateDialogOpen}
         mode="create"
         onClose={handleCloseCreateDialog}
