@@ -24,10 +24,10 @@ interface BoardCardProps {
 }
 
 const priorityMeta: Record<Card["priority"], { label: string; color: "default" | "info" | "warning" | "error" }> = {
-  low: { label: "کم", color: "default" },
-  medium: { label: "متوسط", color: "info" },
-  high: { label: "زیاد", color: "warning" },
-  urgent: { label: "فوری", color: "error" },
+  low: { label: "Low", color: "default" },
+  medium: { label: "Medium", color: "info" },
+  high: { label: "High", color: "warning" },
+  urgent: { label: "Urgent", color: "error" },
 };
 
 const isPastDue = (date?: string) =>
@@ -47,11 +47,19 @@ export function BoardCard({ card, onEdit, onDelete }: BoardCardProps) {
         bgcolor: card.isArchived ? "action.hover" : "background.paper",
         transition: "border-color 160ms ease, box-shadow 160ms ease",
         "&:hover": { borderColor: "primary.main", boxShadow: 2 },
-        "&:focus-within": { outline: "2px solid", outlineColor: "primary.main", outlineOffset: 1 },
+        "&:focus-within": {
+          outline: "2px solid",
+          outlineColor: "primary.main",
+          outlineOffset: 1,
+        },
       }}
     >
       <Stack spacing={1.25}>
-        <Stack direction="row" spacing={1} sx={{ alignItems: "flex-start", justifyContent: "space-between" }}>
+        <Stack
+          direction="row"
+          spacing={1}
+          sx={{ alignItems: "flex-start", justifyContent: "space-between" }}
+        >
           <Typography
             component="h3"
             sx={{
@@ -69,10 +77,10 @@ export function BoardCard({ card, onEdit, onDelete }: BoardCardProps) {
           </Typography>
           {onEdit && onDelete ? (
             <>
-              <Tooltip title="عملیات کارت">
+              <Tooltip title="Card Action">
                 <IconButton
                   size="small"
-                  aria-label="عملیات کارت"
+                  aria-label="Card Action"
                   onPointerDown={(event) => event.stopPropagation()}
                   onClick={(event) => {
                     event.stopPropagation();
@@ -82,35 +90,109 @@ export function BoardCard({ card, onEdit, onDelete }: BoardCardProps) {
                   <MoreVertRoundedIcon fontSize="small" />
                 </IconButton>
               </Tooltip>
-              <Menu anchorEl={menuAnchor} open={Boolean(menuAnchor)} onClose={() => setMenuAnchor(null)}>
-                <MenuItem onClick={() => { setMenuAnchor(null); onEdit(); }}>ویرایش</MenuItem>
-                <MenuItem onClick={() => { setMenuAnchor(null); onDelete(); }} sx={{ color: "error.main" }}>حذف</MenuItem>
+              <Menu
+                anchorEl={menuAnchor}
+                open={Boolean(menuAnchor)}
+                onClose={() => setMenuAnchor(null)}
+              >
+                <MenuItem
+                  onClick={() => {
+                    setMenuAnchor(null);
+                    onEdit();
+                  }}
+                >
+                  Edit
+                </MenuItem>
+                <MenuItem
+                  onClick={() => {
+                    setMenuAnchor(null);
+                    onDelete();
+                  }}
+                  sx={{ color: "error.main" }}
+                >
+                  Delete
+                </MenuItem>
               </Menu>
             </>
           ) : null}
         </Stack>
 
         {card.description ? (
-          <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.8, display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>
+          <Typography
+            variant="body2"
+            color="text.secondary"
+            sx={{
+              lineHeight: 1.8,
+              display: "-webkit-box",
+              WebkitLineClamp: 2,
+              WebkitBoxOrient: "vertical",
+              overflow: "hidden",
+            }}
+          >
             {card.description}
           </Typography>
         ) : null}
 
-        <Stack direction="row" spacing={0.75} useFlexGap sx={{ flexWrap: "wrap", alignItems: "center" }}>
-          <Chip size="small" label={`اولویت: ${priority.label}`} color={priority.color} variant="outlined" />
-          {card.isArchived ? <Chip size="small" icon={<ArchiveOutlinedIcon />} label="بایگانی‌شده" color="default" /> : null}
-          {card.labels.map((label) => <Chip key={label} size="small" label={label} variant="filled" sx={{ bgcolor: "action.hover" }} />)}
+        <Stack
+          direction="row"
+          spacing={0.75}
+          useFlexGap
+          sx={{ flexWrap: "wrap", alignItems: "center" }}
+        >
+          <Chip
+            size="small"
+            label={`Priority: ${priority.label}`}
+            color={priority.color}
+            variant="outlined"
+          />
+          {card.isArchived ? (
+            <Chip
+              size="small"
+              icon={<ArchiveOutlinedIcon />}
+              label="Archived"
+              color="default"
+            />
+          ) : null}
+          {card.labels.map((label) => (
+            <Chip
+              key={label}
+              size="small"
+              label={label}
+              variant="filled"
+              sx={{ bgcolor: "action.hover" }}
+            />
+          ))}
         </Stack>
 
-        <Stack direction="row" spacing={1.5} useFlexGap sx={{ flexWrap: "wrap", color: "text.secondary", alignItems: "center" }}>
+        <Stack
+          direction="row"
+          spacing={1.5}
+          useFlexGap
+          sx={{
+            flexWrap: "wrap",
+            color: "text.secondary",
+            alignItems: "center",
+          }}
+        >
           {card.assignee ? (
             <Stack direction="row" spacing={0.5} sx={{ alignItems: "center" }}>
-              <Avatar sx={{ width: 22, height: 22, fontSize: 12 }}>{card.assignee.charAt(0).toUpperCase()}</Avatar>
+              <Avatar sx={{ width: 22, height: 22, fontSize: 12 }}>
+                {card.assignee.charAt(0).toUpperCase()}
+              </Avatar>
               <Typography variant="caption">{card.assignee}</Typography>
             </Stack>
           ) : null}
           {card.dueDate ? (
-            <Stack direction="row" spacing={0.5} sx={{ alignItems: "center", color: isPastDue(card.dueDate) ? "error.main" : "text.secondary" }}>
+            <Stack
+              direction="row"
+              spacing={0.5}
+              sx={{
+                alignItems: "center",
+                color: isPastDue(card.dueDate)
+                  ? "error.main"
+                  : "text.secondary",
+              }}
+            >
               <CalendarTodayOutlinedIcon sx={{ fontSize: 15 }} />
               <Typography variant="caption">{card.dueDate}</Typography>
             </Stack>
