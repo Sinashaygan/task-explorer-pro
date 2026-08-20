@@ -1,6 +1,7 @@
 "use client";
 
 import { ReactNode } from "react";
+import { useEffect } from "react";
 
 import { CssBaseline, ThemeProvider } from "@mui/material";
 import { Provider } from "react-redux";
@@ -13,6 +14,10 @@ interface AppProvidersProps {
 }
 
 export function AppProviders({ children }: AppProvidersProps) {
+  useEffect(() => {
+    persistor.persist();
+  }, []);
+
   return (
     <Provider store={store}>
       <PersistGate loading={null} persistor={persistor}>
