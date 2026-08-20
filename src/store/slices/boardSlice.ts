@@ -1,4 +1,10 @@
-import { Board, Card, Column, Id } from "@/src/shared/types/normalized";
+import {
+  Board,
+  Card,
+  Column,
+  Id,
+  Priority,
+} from "@/src/shared/types/normalized";
 import {
   createEntityAdapter,
   createSlice,
@@ -28,6 +34,32 @@ interface InitializeBoardPayload {
   columns: Column[];
   cards: Card[];
 }
+
+interface AddCardPayload {
+  columnId: Id;
+  title: string;
+  description: string;
+  labels: string[];
+  priority: Priority;
+  assignee: string;
+  dueDate: string;
+}
+
+interface UpdateCardPayload {
+  id: Id;
+  title: string;
+  description: string;
+  labels: string[];
+  priority: Priority;
+  assignee: string;
+  dueDate: string;
+  isArchived: boolean;
+}
+
+const createId = (): Id =>
+  typeof globalThis.crypto?.randomUUID === "function"
+    ? globalThis.crypto.randomUUID()
+    : `card-${Date.now()}-${Math.random().toString(36).slice(2)}`;
 
 const boardSlice = createSlice({
   name: "board",
@@ -87,8 +119,8 @@ const boardSlice = createSlice({
       const card = state.cards.entities[cardId];
 
       if (!overColumn || !card) return;
-      const activeColumn = Object.values(state.columns.entities).find((column) =>
-        column?.cardIds.includes(cardId),
+      const activeColumn = Object.values(state.columns.entities).find(
+        (column) => column?.cardIds.includes(cardId),
       );
       if (!activeColumn || activeColumn.id === overColumnId) return;
 
@@ -112,10 +144,112 @@ const boardSlice = createSlice({
       overColumn.updatedAt = timestamp;
       card.updatedAt = timestamp;
     },
+
+    addCard: (state, action: PayloadAction<AddCardPayload>) => {
+      const {
+        columnId,
+        title,
+        description,
+        labels,
+        priority,
+        assignee,
+        dueDate,
+      } = action.payload;
+
+      const column = state.columns.entities[columnId];
+      const board = state.board;
+
+      if (!column || !board) return;
+      const id = createId();
+      if (state.cards.entities[id]) return;
+      const now = new Date().toISOString();
+
+      const card: Card = {
+        id,
+        boardId: board.id,
+        columnId,
+        title: title.trim(),
+        description: description.trim(),
+        labels: [...new Set(labels.map((label) => label.trim()).filter(Boolean))],
+        priority,
+        assignee: assignee.trim() || undefined,
+        dueDate: dueDate || undefined,
+        order: column.cardIds.length,
+        createdAt: now,
+        updatedAt: now,
+        isArchived: false,
+      };
+
+      cardsAdapter.addOne(state.cards, card);
+      column.cardIds.push(card.id);
+      column.updatedAt = now;
+    },
+
+    updateCard: (state, action: PayloadAction<UpdateCardPayload>) => {
+      const {
+        id,
+        priority,
+        title,
+        assignee,
+        description,
+        dueDate,
+        labels,
+        isArchived,
+      } =
+        action.payload;
+
+      const card = state.cards.entities[id];
+      if (!card) return;
+      const now = new Date().toISOString();
+
+      card.title = title.trim();
+      card.description = description.trim();
+      card.labels = [...new Set(labels.map((label) => label.trim()).filter(Boolean))];
+      card.priority = priority;
+      card.assignee = assignee.trim() || undefined;
+      card.dueDate = dueDate || undefined;
+      card.isArchived = isArchived;
+      card.updatedAt = now;
+    },
+
+    deleteCard: (state, action: PayloadAction<{ id: Id }>) => {
+      const { id } = action.payload;
+
+      const card = state.cards.entities[id];
+      if (!card) return;
+
+      const column = state.columns.entities[card.columnId];
+      const now = new Date().toISOString();
+
+      if (column) {
+        column.cardIds = column.cardIds.filter((cardId) => cardId !== id);
+
+        column.cardIds.forEach((cardId, index) => {
+          const remainingCard = state.cards.entities[cardId];
+
+          if (remainingCard) {
+            remainingCard.order = index;
+            remainingCard.updatedAt = now;
+          }
+        });
+
+        column.updatedAt = now;
+      }
+
+      cardsAdapter.removeOne(state.cards, id);
+    },
   },
 });
 
-export const { initializeBoard, resetBoard, toggleColumnCollapse, moveCardBetweenColumns, reorderCards } =
-  boardSlice.actions;
+export const {
+  initializeBoard,
+  resetBoard,
+  toggleColumnCollapse,
+  moveCardBetweenColumns,
+  reorderCards,
+  addCard,
+  updateCard,
+  deleteCard,
+} = boardSlice.actions;
 
 export default boardSlice.reducer;

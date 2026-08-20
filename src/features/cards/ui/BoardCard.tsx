@@ -1,46 +1,121 @@
-import { Box, Chip, Paper, Stack, Typography } from "@mui/material";
+"use client";
 
+import { useState } from "react";
+import {
+  Avatar,
+  Chip,
+  IconButton,
+  Menu,
+  MenuItem,
+  Paper,
+  Stack,
+  Tooltip,
+  Typography,
+} from "@mui/material";
+import MoreVertRoundedIcon from "@mui/icons-material/MoreVertRounded";
+import ArchiveOutlinedIcon from "@mui/icons-material/ArchiveOutlined";
+import CalendarTodayOutlinedIcon from "@mui/icons-material/CalendarTodayOutlined";
 import { Card } from "@/src/shared/types/normalized";
 
 interface BoardCardProps {
   card: Card;
+  onEdit?: () => void;
+  onDelete?: () => void;
 }
 
-const priorityColorMap: Record<
-  Card["priority"],
-  "default" | "primary" | "warning" | "error"
-> = {
-  low: "default",
-  medium: "warning",
-  high: "error",
+const priorityMeta: Record<Card["priority"], { label: string; color: "default" | "info" | "warning" | "error" }> = {
+  low: { label: "Low", color: "default" },
+  medium: { label: "Medium", color: "info" },
+  high: { label: "High", color: "warning" },
+  urgent: { label: "Urgent", color: "error" },
 };
 
-export function BoardCard({ card }: BoardCardProps) {
+const isPastDue = (date?: string) =>
+  Boolean(date && new Date(`${date}T23:59:59`).getTime() < Date.now());
+
+export function BoardCard({ card, onEdit, onDelete }: BoardCardProps) {
+  const [menuAnchor, setMenuAnchor] = useState<null | HTMLElement>(null);
+  const priority = priorityMeta[card.priority];
+
   return (
     <Paper
       variant="outlined"
       sx={{
         p: 2,
         borderRadius: 3,
-        cursor: "default",
-        transition:
-          "border-color 160ms ease, box-shadow 160ms ease, transform 160ms ease",
-        "&:hover": {
-          borderColor: "primary.main",
-          boxShadow: "0 8px 24px rgba(15, 23, 42, 0.08)",
-          transform: "translateY(-1px)",
+        opacity: card.isArchived ? 0.62 : 1,
+        bgcolor: card.isArchived ? "action.hover" : "background.paper",
+        transition: "border-color 160ms ease, box-shadow 160ms ease",
+        "&:hover": { borderColor: "primary.main", boxShadow: 2 },
+        "&:focus-within": {
+          outline: "2px solid",
+          outlineColor: "primary.main",
+          outlineOffset: 1,
         },
       }}
     >
-      <Stack spacing={1.5}>
-        <Typography
-          sx={{
-            lineHeight: 1.6,
-            fontWeight:700
-          }}
+      <Stack spacing={1.25}>
+        <Stack
+          direction="row"
+          spacing={1}
+          sx={{ alignItems: "flex-start", justifyContent: "space-between" }}
         >
-          {card.title}
-        </Typography>
+          <Typography
+            component="h3"
+            sx={{
+              minWidth: 0,
+              fontWeight: 750,
+              lineHeight: 1.7,
+              display: "-webkit-box",
+              WebkitBoxOrient: "vertical",
+              WebkitLineClamp: 3,
+              overflow: "hidden",
+              overflowWrap: "anywhere",
+            }}
+          >
+            {card.title}
+          </Typography>
+          {onEdit && onDelete ? (
+            <>
+              <Tooltip title="Card Action">
+                <IconButton
+                  size="small"
+                  aria-label="Card Action"
+                  onPointerDown={(event) => event.stopPropagation()}
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    setMenuAnchor(event.currentTarget);
+                  }}
+                >
+                  <MoreVertRoundedIcon fontSize="small" />
+                </IconButton>
+              </Tooltip>
+              <Menu
+                anchorEl={menuAnchor}
+                open={Boolean(menuAnchor)}
+                onClose={() => setMenuAnchor(null)}
+              >
+                <MenuItem
+                  onClick={() => {
+                    setMenuAnchor(null);
+                    onEdit();
+                  }}
+                >
+                  Edit
+                </MenuItem>
+                <MenuItem
+                  onClick={() => {
+                    setMenuAnchor(null);
+                    onDelete();
+                  }}
+                  sx={{ color: "error.main" }}
+                >
+                  Delete
+                </MenuItem>
+              </Menu>
+            </>
+          ) : null}
+        </Stack>
 
         {card.description ? (
           <Typography
@@ -59,41 +134,70 @@ export function BoardCard({ card }: BoardCardProps) {
         ) : null}
 
         <Stack
-          spacing={1}
+          direction="row"
+          spacing={0.75}
           useFlexGap
-          sx={{
-            alignItems:"center",
-            flexDirection:"row",
-            flexWrap:"wrap"
-          }}
+          sx={{ flexWrap: "wrap", alignItems: "center" }}
         >
           <Chip
             size="small"
-            label={card.priority}
-            color={priorityColorMap[card.priority]}
+            label={`Priority: ${priority.label}`}
+            color={priority.color}
             variant="outlined"
           />
-
+          {card.isArchived ? (
+            <Chip
+              size="small"
+              icon={<ArchiveOutlinedIcon />}
+              label="Archived"
+              color="default"
+            />
+          ) : null}
           {card.labels.map((label) => (
             <Chip
               key={label}
               size="small"
               label={label}
               variant="filled"
-              sx={{
-                bgcolor: "grey.100",
-              }}
+              sx={{ bgcolor: "action.hover" }}
             />
           ))}
         </Stack>
 
-        {card.dueDate ? (
-          <Box>
-            <Typography variant="caption" color="text.secondary">
-              Due: {card.dueDate}
-            </Typography>
-          </Box>
-        ) : null}
+        <Stack
+          direction="row"
+          spacing={1.5}
+          useFlexGap
+          sx={{
+            flexWrap: "wrap",
+            color: "text.secondary",
+            alignItems: "center",
+          }}
+        >
+          {card.assignee ? (
+            <Stack direction="row" spacing={0.5} sx={{ alignItems: "center" }}>
+              <Avatar sx={{ width: 22, height: 22, fontSize: 12 }}>
+                {card.assignee.charAt(0).toUpperCase()}
+              </Avatar>
+              <Typography variant="caption">{card.assignee}</Typography>
+            </Stack>
+          ) : null}
+          {card.dueDate ? (
+            <Stack
+              direction="row"
+              spacing={0.5}
+              sx={{
+                alignItems: "center",
+                color: isPastDue(card.dueDate)
+                  ? "error.main"
+                  : "text.secondary",
+              }}
+            >
+              <CalendarTodayOutlinedIcon sx={{ fontSize: 15 }} />
+              <Typography variant="caption">{card.dueDate}</Typography>
+            </Stack>
+          ) : null}
+        </Stack>
       </Stack>
     </Paper>
   );

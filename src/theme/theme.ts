@@ -20,7 +20,7 @@ export const theme = createTheme({
 
   typography: {
     fontFamily:
-      'var(--font-vazirmatn), system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
+      'var(--font-vazirmatn), Vazirmatn, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
     body1: {
       lineHeight: 1.8,
     },
@@ -53,6 +53,21 @@ export const theme = createTheme({
           backgroundImage: "none",
         },
       },
+    },
+    MuiTextField: {
+      defaultProps: { variant: "outlined" },
+    },
+    MuiInputBase: {
+      styleOverrides: {
+        root: { fontFamily: "inherit" },
+        input: { fontFamily: "inherit" },
+      },
+    },
+    MuiChip: {
+      styleOverrides: { label: { fontFamily: "inherit" } },
+    },
+    MuiTooltip: {
+      styleOverrides: { tooltip: { fontFamily: "inherit" } },
     },
   },
 });
