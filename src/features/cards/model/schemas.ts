@@ -1,17 +1,6 @@
 import { z } from "zod";
-import { Priority } from "@/src/shared/types/normalized";
 
-export interface CardFormValue {
-  title: string;
-  description: string;
-  labels: string[];
-  priority: Priority;
-  assignee: string;
-  dueDate: string;
-  isArchived: boolean;
-}
-
-export const cardSchemas: z.ZodType<CardFormValue> = z.object({
+export const cardSchemas = z.object({
   title: z
     .string()
     .trim()
@@ -37,3 +26,5 @@ export const cardSchemas: z.ZodType<CardFormValue> = z.object({
   dueDate: z.string(),
   isArchived: z.boolean(),
 });
+
+export type CardFormValue = z.infer<typeof cardSchemas>
