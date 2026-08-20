@@ -8,12 +8,10 @@ interface SortableCardProps {
   card: Card;
   onEdit: () => void;
   onDelete: () => void;
-  isOverlay?: boolean;
 }
 
 export default function SortableCard({
   card,
-  isOverlay,
   onEdit,
   onDelete,
 }: SortableCardProps) {
