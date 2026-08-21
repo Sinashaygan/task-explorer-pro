@@ -1,5 +1,6 @@
 "use client";
 
+import { useId } from "react";
 import {
   Button,
   Dialog,
@@ -22,12 +23,22 @@ export function ConfirmDeleteDialog({
   onClose,
   onConfirm,
 }: ConfirmDeleteDialogProps) {
+  const titleId = useId();
+  const descriptionId = `${titleId}-description`;
+
   return (
-    <Dialog open={open} onClose={onClose} fullWidth maxWidth="xs">
-      <DialogTitle>Delete card</DialogTitle>
+    <Dialog
+      open={open}
+      onClose={onClose}
+      fullWidth
+      maxWidth="xs"
+      aria-labelledby={titleId}
+      aria-describedby={descriptionId}
+    >
+      <DialogTitle id={titleId}>Delete card</DialogTitle>
 
       <DialogContent>
-        <DialogContentText sx={{ lineHeight: 1.8 }}>
+        <DialogContentText id={descriptionId} sx={{ lineHeight: 1.8 }}>
           Are you sure you want to delete{" "}
           <strong>{cardTitle || "the selected card"}</strong>?
           <br />

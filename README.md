@@ -1,36 +1,67 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Kanban Board
 
-## Getting Started
+A simple Kanban board for organizing work across columns and cards.
 
-First, run the development server:
+## Main features
+
+- Create, edit, archive, and delete cards
+- Add card descriptions, labels, priorities, assignees, and due dates
+- Drag and drop cards between columns
+- Reorder cards within a column
+- Collapse and expand columns
+- Undo recent card actions
+- Responsive Material UI interface
+
+## Technologies
+
+- Next.js
+- React
+- TypeScript
+- Redux Toolkit
+- Redux Persist
+- dnd-kit
+- Material UI
+- React Hook Form
+- Zod
+
+## Installation and running
+
+Install dependencies:
+
+```bash
+npm install
+```
+
+Start the development server:
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000) in your browser.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Available scripts
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+- `npm run dev` — start the development server
+- `npm run build` — create a production build
+- `npm run start` — start the production server
+- `npm run lint` — run ESLint
 
-## Learn More
+## Basic project structure
 
-To learn more about Next.js, take a look at the following resources:
+```text
+app/                 Next.js app entry points and providers
+src/entities/        Board, column, and card data models and selectors
+src/features/        Board, column, and card UI
+src/shared/           Shared types and UI components
+src/store/            Redux store and slices
+src/theme/            Material UI theme
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Persistence
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+Redux Persist stores only the normalized `board` state in browser storage. UI state and undo state are not persisted. The store uses persist version `2` and includes a migration scaffold for future state changes. Sample board data is initialized only when no board data is available after rehydration.
 
-## Deploy on Vercel
+## Drag-and-drop and CRUD
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Cards use dnd-kit for pointer and keyboard drag-and-drop. Card CRUD actions are handled through Redux Toolkit reducers while card entities and column entities remain normalized. Column `cardIds` define the card order.

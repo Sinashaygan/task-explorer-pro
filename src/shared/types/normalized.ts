@@ -45,3 +45,12 @@ export interface BoardFilters {
   priorities: Priority[];
   assignee?: string | null;
 }
+
+export type UndoOperation = "delete" | "archive" | "unarchive" | "move" | "reorder";
+
+export interface UndoEntry {
+  operation: UndoOperation;
+  card: Card;
+  columnId: Id;
+  index: number;
+}
