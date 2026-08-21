@@ -44,7 +44,7 @@ export function BoardCard({ card, onEdit, onDelete }: BoardCardProps) {
     <Paper
       variant="outlined"
       sx={{
-        p: 2,
+        p: 3,
         borderRadius: 3,
         opacity: card.isArchived ? 0.62 : 1,
         bgcolor: card.isArchived ? "action.hover" : "background.paper",
