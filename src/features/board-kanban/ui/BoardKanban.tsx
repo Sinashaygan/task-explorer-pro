@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import {
   closestCorners,
@@ -15,7 +15,7 @@ import {
   useSensor,
   useSensors,
 } from "@dnd-kit/core";
-import { Box, Stack, Typography } from "@mui/material";
+import { Box, Button, Snackbar, Stack, Typography } from "@mui/material";
 
 import { selectCurrentBoard } from "@/src/entities/board/model/selectors";
 import { selectBoardState } from "@/src/entities/board/model/selectors";
@@ -23,12 +23,16 @@ import { selectBoardColumns } from "@/src/entities/column/model/selectors";
 import { selectCardById } from "@/src/entities/card/model/selectors";
 import { EmptyState } from "@/src/shared/ui/EmptyState";
 import { useAppDispatch, useAppSelector } from "@/src/store/hook";
+import { store } from "@/src/store";
 import { setActiveDragId } from "@/src/store/slices/uiSlice";
 import {
   moveCardBetweenColumns,
   reorderCards,
+  restoreCard,
 } from "@/src/store/slices/boardSlice";
+import { dismissUndo, setUndoEntry } from "@/src/store/slices/undoSlice";
 import { Id } from "@/src/shared/types/normalized";
+import type { Card } from "@/src/shared/types/normalized";
 import { BoardColumn } from "../../columns/ui/BoardColumn";
 import { BoardCard } from "../../cards/ui/BoardCard";
 
@@ -40,6 +44,9 @@ export function BoardKanban() {
 
   const [activeCardId, setActiveCardId] = useState<Id | null>(null);
   const [mounted, setMounted] = useState(false);
+  const dragSnapshotRef = useRef<{ card: Card; columnId: Id; index: number } | null>(
+    null,
+  );
   useEffect(() => setMounted(true), []);
 
   const sensors = useSensors(
@@ -53,6 +60,17 @@ export function BoardKanban() {
     if (data?.type === "Card") {
       setActiveCardId(active.id);
       dispatch(setActiveDragId(active.id));
+      const card = boardState.cards.entities[active.id as Id];
+      if (card) {
+        dragSnapshotRef.current = {
+          card: { ...card },
+          columnId: card.columnId,
+          index: Math.max(
+            0,
+            boardState.columns.entities[card.columnId]?.cardIds.indexOf(card.id) ?? 0,
+          ),
+        };
+      }
     }
   };
 
@@ -104,20 +122,13 @@ export function BoardKanban() {
 
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
-    setActiveCardId(null);
-    dispatch(setActiveDragId(null));
-
-    if (!over) {
-      return;
-    }
-
+    const snapshot = dragSnapshotRef.current;
     const isActiveCard = active.data.current?.type === "Card";
-    const isOverACard = over.data.current?.type === "Card";
+    const isOverACard = over?.data.current?.type === "Card";
 
-    if (active.id !== over.id && isActiveCard && isOverACard) {
+    if (over && active.id !== over.id && isActiveCard && isOverACard) {
       const activeCard = boardState.cards.entities[active.id as Id];
       const overCard = boardState.cards.entities[over.id as Id];
-
       if (activeCard && overCard && activeCard.columnId === overCard.columnId) {
         dispatch(
           reorderCards({
@@ -128,9 +139,43 @@ export function BoardKanban() {
         );
       }
     }
+
+    const boardAfter = store.getState().board;
+    const currentCard = snapshot
+      ? boardAfter.cards.entities[snapshot.card.id]
+      : undefined;
+    if (snapshot && currentCard) {
+      const currentIndex =
+        boardAfter.columns.entities[currentCard.columnId]?.cardIds.indexOf(
+          currentCard.id,
+        ) ?? -1;
+      if (
+        currentCard.columnId !== snapshot.columnId ||
+        currentIndex !== snapshot.index
+      ) {
+        dispatch(
+          setUndoEntry({
+            operation:
+              currentCard.columnId === snapshot.columnId ? "reorder" : "move",
+            card: snapshot.card,
+            columnId: snapshot.columnId,
+            index: snapshot.index,
+          }),
+        );
+      }
+    }
+    dragSnapshotRef.current = null;
+    setActiveCardId(null);
+    dispatch(setActiveDragId(null));
+
+    if (!over) {
+      return;
+    }
+
   };
 
   const handleDragCancel = () => {
+    dragSnapshotRef.current = null;
     setActiveCardId(null);
     dispatch(setActiveDragId(null));
   };
@@ -138,6 +183,21 @@ export function BoardKanban() {
   const activeCard = useAppSelector((state) =>
     activeCardId ? selectCardById(state, activeCardId) : null,
   );
+  const undoEntry = useAppSelector((state) => state.undo.entry);
+  const snackbarOpen = useAppSelector((state) => state.undo.snackbarOpen);
+
+  const handleUndo = () => {
+    const entry = undoEntry;
+    if (!entry) return;
+    dispatch(
+      restoreCard({
+        card: entry.card,
+        columnId: entry.columnId,
+        index: entry.index,
+      }),
+    );
+    dispatch(dismissUndo());
+  };
 
   if (!board) {
     return (
@@ -210,7 +270,17 @@ export function BoardKanban() {
               }}
             >
               {activeCard ? (
-                  <Box sx={{ transform: "rotate(3deg)", cursor: "grabbing" }}>
+                  <Box
+                    sx={{
+                      transform: "rotate(3deg)",
+                      cursor: "grabbing",
+                      opacity: 0.92,
+                      transition: "transform 160ms ease, opacity 160ms ease",
+                      "@media (prefers-reduced-motion: reduce)": {
+                        transition: "none",
+                      },
+                    }}
+                  >
                   <BoardCard card={activeCard} />
                 </Box>
               ) : null}
@@ -218,6 +288,7 @@ export function BoardKanban() {
             document.body,
           )}
       </DndContext>
+      
     </Stack>
   );
 }
