@@ -56,6 +56,12 @@ interface UpdateCardPayload {
   isArchived: boolean;
 }
 
+interface RestoreCardPayload {
+  card: Card;
+  columnId: Id;
+  index: number;
+}
+
 const createId = (): Id =>
   typeof globalThis.crypto?.randomUUID === "function"
     ? globalThis.crypto.randomUUID()
@@ -101,7 +107,12 @@ const boardSlice = createSlice({
       const newIndex = column.cardIds.indexOf(overCardId);
       if (oldIndex < 0 || newIndex < 0 || oldIndex === newIndex) return;
       const [cardId] = column.cardIds.splice(oldIndex, 1);
+      column.cardIds = column.cardIds.filter((id, index, ids) => ids.indexOf(id) === index);
       column.cardIds.splice(newIndex, 0, cardId);
+      column.cardIds.forEach((id, index) => {
+        const entity = state.cards.entities[id];
+        if (entity) entity.order = index;
+      });
       column.updatedAt = new Date().toISOString();
     },
 
@@ -124,7 +135,9 @@ const boardSlice = createSlice({
       );
       if (!activeColumn || activeColumn.id === overColumnId) return;
 
-      activeColumn.cardIds = activeColumn.cardIds.filter((id) => id !== cardId);
+      Object.values(state.columns.entities).forEach((column) => {
+        if (column) column.cardIds = column.cardIds.filter((id) => id !== cardId);
+      });
       const requestedIndex = overCardId
         ? overColumn.cardIds.indexOf(overCardId)
         : newIndex;
@@ -143,6 +156,10 @@ const boardSlice = createSlice({
       activeColumn.updatedAt = timestamp;
       overColumn.updatedAt = timestamp;
       card.updatedAt = timestamp;
+      overColumn.cardIds.forEach((id, index) => {
+        const entity = state.cards.entities[id];
+        if (entity) entity.order = index;
+      });
     },
 
     addCard: (state, action: PayloadAction<AddCardPayload>) => {
@@ -218,11 +235,13 @@ const boardSlice = createSlice({
       const card = state.cards.entities[id];
       if (!card) return;
 
-      const column = state.columns.entities[card.columnId];
       const now = new Date().toISOString();
 
-      if (column) {
+      Object.values(state.columns.entities).forEach((column) => {
+        if (!column) return;
+        const hadCard = column.cardIds.includes(id);
         column.cardIds = column.cardIds.filter((cardId) => cardId !== id);
+        if (!hadCard) return;
 
         column.cardIds.forEach((cardId, index) => {
           const remainingCard = state.cards.entities[cardId];
@@ -234,9 +253,44 @@ const boardSlice = createSlice({
         });
 
         column.updatedAt = now;
-      }
+      });
 
       cardsAdapter.removeOne(state.cards, id);
+    },
+
+    restoreCard: (state, action: PayloadAction<RestoreCardPayload>) => {
+      const { card, columnId, index } = action.payload;
+      const targetColumn = state.columns.entities[columnId];
+      if (!targetColumn || !state.board || card.boardId !== state.board.id) return;
+
+      Object.values(state.columns.entities).forEach((column) => {
+        if (!column) return;
+        column.cardIds = column.cardIds.filter((cardId) => cardId !== card.id);
+      });
+
+      const restoredCard: Card = {
+        ...card,
+        columnId,
+        updatedAt: new Date().toISOString(),
+      };
+      cardsAdapter.upsertOne(state.cards, restoredCard);
+
+      const insertIndex = Math.max(
+        0,
+        Math.min(Number.isFinite(index) ? index : targetColumn.cardIds.length, targetColumn.cardIds.length),
+      );
+      targetColumn.cardIds.splice(insertIndex, 0, card.id);
+      targetColumn.cardIds = targetColumn.cardIds.filter(
+        (cardId, cardIndex, ids) => ids.indexOf(cardId) === cardIndex,
+      );
+      targetColumn.cardIds.forEach((cardId, cardIndex) => {
+        const entity = state.cards.entities[cardId];
+        if (entity) {
+          entity.order = cardIndex;
+          entity.columnId = columnId;
+        }
+      });
+      targetColumn.updatedAt = restoredCard.updatedAt;
     },
   },
 });
@@ -250,6 +304,7 @@ export const {
   addCard,
   updateCard,
   deleteCard,
+  restoreCard,
 } = boardSlice.actions;
 
 export default boardSlice.reducer;
