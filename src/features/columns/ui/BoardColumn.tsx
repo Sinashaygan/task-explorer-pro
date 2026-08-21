@@ -41,6 +41,7 @@ import { ConfirmDeleteDialog } from "../../cards/ui/ConfirmDeleteDialog";
 
 import { CardFormValue } from "../../cards/model/schemas";
 import SortableCard from "../../cards/ui/SortableCard";
+import { setUndoEntry } from "@/src/store/slices/undoSlice";
 
 interface BoardColumnProps {
   column: Column;
@@ -108,6 +109,17 @@ export function BoardColumn({ column }: BoardColumnProps) {
       return;
     }
 
+    if (editingCard.isArchived !== values.isArchived) {
+      dispatch(
+        setUndoEntry({
+          operation: values.isArchived ? "archive" : "unarchive",
+          card: { ...editingCard },
+          columnId: editingCard.columnId,
+          index: Math.max(0, column.cardIds.indexOf(editingCard.id)),
+        }),
+      );
+    }
+
     dispatch(
       updateCard({
         id: editingCard.id,
@@ -137,6 +149,15 @@ export function BoardColumn({ column }: BoardColumnProps) {
       setDeletingCardId(null);
       return;
     }
+
+    dispatch(
+      setUndoEntry({
+        operation: "delete",
+        card: { ...deletingCard },
+        columnId: deletingCard.columnId,
+        index: Math.max(0, column.cardIds.indexOf(deletingCard.id)),
+      }),
+    );
 
     dispatch(
       deleteCard({
@@ -171,10 +192,16 @@ export function BoardColumn({ column }: BoardColumnProps) {
             alignItems: "flex-start",
             justifyContent: "center",
             bgcolor: "background.paper",
+            transition: "width 180ms ease, min-width 180ms ease",
+            "@media (prefers-reduced-motion: reduce)": { transition: "none" },
           }}
         >
           <Stack spacing={1} sx={{ alignItems: "center" }}>
-            <IconButton size="small" onClick={handleToggleCollapse}>
+            <IconButton
+              size="small"
+              onClick={handleToggleCollapse}
+              aria-label={`Expand ${column.title} column`}
+            >
               <KeyboardArrowRightRounded fontSize="small" />
             </IconButton>
 
@@ -208,6 +235,8 @@ export function BoardColumn({ column }: BoardColumnProps) {
             display: "flex",
             flexDirection: "column",
             overflow: "hidden",
+            transition: "width 180ms ease, max-height 180ms ease, box-shadow 160ms ease",
+            "@media (prefers-reduced-motion: reduce)": { transition: "none" },
             outline: isOver ? "2px solid" : undefined,
             outlineColor: isOver ? "primary.main" : undefined,
           }}
@@ -291,7 +320,11 @@ export function BoardColumn({ column }: BoardColumnProps) {
                   Add card
                 </Button>
 
-                <IconButton size="small" onClick={handleToggleCollapse}>
+                <IconButton
+                  size="small"
+                  onClick={handleToggleCollapse}
+                  aria-label={`Collapse ${column.title} column`}
+                >
                   <KeyboardArrowDownRoundedIcon fontSize="small" />
                 </IconButton>
               </Stack>
