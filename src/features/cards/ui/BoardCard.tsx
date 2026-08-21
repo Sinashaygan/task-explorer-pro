@@ -23,7 +23,10 @@ interface BoardCardProps {
   onDelete?: () => void;
 }
 
-const priorityMeta: Record<Card["priority"], { label: string; color: "default" | "info" | "warning" | "error" }> = {
+const priorityMeta: Record<
+  Card["priority"],
+  { label: string; color: "default" | "info" | "warning" | "error" }
+> = {
   low: { label: "Low", color: "default" },
   medium: { label: "Medium", color: "info" },
   high: { label: "High", color: "warning" },
@@ -45,8 +48,17 @@ export function BoardCard({ card, onEdit, onDelete }: BoardCardProps) {
         borderRadius: 3,
         opacity: card.isArchived ? 0.62 : 1,
         bgcolor: card.isArchived ? "action.hover" : "background.paper",
-        transition: "border-color 160ms ease, box-shadow 160ms ease",
-        "&:hover": { borderColor: "primary.main", boxShadow: 2 },
+        transition:
+          "border-color 160ms ease, box-shadow 160ms ease, transform 160ms ease",
+        "&:hover": {
+          borderColor: "primary.main",
+          boxShadow: 2,
+          transform: "translateY(-1px)",
+        },
+        "@media (prefers-reduced-motion: reduce)": {
+          transition: "none",
+          "&:hover": { transform: "none" },
+        },
         "&:focus-within": {
           outline: "2px solid",
           outlineColor: "primary.main",
@@ -77,10 +89,10 @@ export function BoardCard({ card, onEdit, onDelete }: BoardCardProps) {
           </Typography>
           {onEdit && onDelete ? (
             <>
-              <Tooltip title="Card Action">
+              <Tooltip title="Card actions">
                 <IconButton
                   size="small"
-                  aria-label="Card Action"
+                  aria-label={`Actions for card: ${card.title}`}
                   onPointerDown={(event) => event.stopPropagation()}
                   onClick={(event) => {
                     event.stopPropagation();
