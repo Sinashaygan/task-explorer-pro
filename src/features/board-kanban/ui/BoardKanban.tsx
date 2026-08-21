@@ -44,9 +44,11 @@ export function BoardKanban() {
 
   const [activeCardId, setActiveCardId] = useState<Id | null>(null);
   const [mounted, setMounted] = useState(false);
-  const dragSnapshotRef = useRef<{ card: Card; columnId: Id; index: number } | null>(
-    null,
-  );
+  const dragSnapshotRef = useRef<{
+    card: Card;
+    columnId: Id;
+    index: number;
+  } | null>(null);
   useEffect(() => setMounted(true), []);
 
   const sensors = useSensors(
@@ -67,7 +69,9 @@ export function BoardKanban() {
           columnId: card.columnId,
           index: Math.max(
             0,
-            boardState.columns.entities[card.columnId]?.cardIds.indexOf(card.id) ?? 0,
+            boardState.columns.entities[card.columnId]?.cardIds.indexOf(
+              card.id,
+            ) ?? 0,
           ),
         };
       }
@@ -171,7 +175,6 @@ export function BoardKanban() {
     if (!over) {
       return;
     }
-
   };
 
   const handleDragCancel = () => {
@@ -260,7 +263,8 @@ export function BoardKanban() {
         </Box>
 
         {/* نمایش کارت معلق هنگام درگ (بسیار مهم برای UX عالی) */}
-        {mounted && typeof document !== "undefined" &&
+        {mounted &&
+          typeof document !== "undefined" &&
           createPortal(
             <DragOverlay
               dropAnimation={{
@@ -270,17 +274,17 @@ export function BoardKanban() {
               }}
             >
               {activeCard ? (
-                  <Box
-                    sx={{
-                      transform: "rotate(3deg)",
-                      cursor: "grabbing",
-                      opacity: 0.92,
-                      transition: "transform 160ms ease, opacity 160ms ease",
-                      "@media (prefers-reduced-motion: reduce)": {
-                        transition: "none",
-                      },
-                    }}
-                  >
+                <Box
+                  sx={{
+                    transform: "rotate(3deg)",
+                    cursor: "grabbing",
+                    opacity: 0.92,
+                    transition: "transform 160ms ease, opacity 160ms ease",
+                    "@media (prefers-reduced-motion: reduce)": {
+                      transition: "none",
+                    },
+                  }}
+                >
                   <BoardCard card={activeCard} />
                 </Box>
               ) : null}
@@ -288,7 +292,39 @@ export function BoardKanban() {
             document.body,
           )}
       </DndContext>
-      
+      <Snackbar
+        open={snackbarOpen}
+        autoHideDuration={6000}
+        onClose={() => dispatch(dismissUndo())}
+        sx={{
+          "@media (prefers-reduced-motion: reduce)": {
+            "&, & *": {
+              animationDuration: "0.01ms !important",
+              transitionDuration: "0.01ms !important",
+            },
+          },
+        }}
+        message={
+          undoEntry
+            ? `${undoEntry.card.title} ${
+                undoEntry.operation === "delete"
+                  ? "deleted"
+                  : undoEntry.operation === "archive"
+                    ? "archived"
+                    : undoEntry.operation === "unarchive"
+                      ? "unarchived"
+                      : undoEntry.operation === "move"
+                        ? "moved"
+                        : "reordered"
+              }`
+            : "Action completed"
+        }
+        action={
+          <Button color="inherit" size="small" onClick={handleUndo}>
+            Undo
+          </Button>
+        }
+      />
     </Stack>
   );
 }
