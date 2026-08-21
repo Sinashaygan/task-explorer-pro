@@ -1,67 +1,48 @@
-# Kanban Board
+# 📋 Kanban Board
 
-A simple Kanban board for organizing work across columns and cards.
+A modern, responsive Kanban board for organizing work across customizable columns and cards.
 
-## Main features
+Built with **Next.js**, **TypeScript**, **Redux Toolkit**, and **dnd-kit**.
 
-- Create, edit, archive, and delete cards
-- Add card descriptions, labels, priorities, assignees, and due dates
-- Drag and drop cards between columns
-- Reorder cards within a column
-- Collapse and expand columns
-- Undo recent card actions
-- Responsive Material UI interface
+---
 
-## Technologies
+## ✨ Features
 
-- Next.js
-- React
-- TypeScript
-- Redux Toolkit
-- Redux Persist
-- dnd-kit
-- Material UI
-- React Hook Form
-- Zod
+- 🗂️ Create, edit, archive, and delete cards
+- 📝 Add descriptions, labels, priorities, assignees, and due dates
+- ↔️ Drag cards between columns
+- 🔀 Reorder cards within the same column
+- 📥 Collapse and expand columns
+- ↩️ Undo recent card actions
+- 💾 Persist board data in browser storage
+- 📱 Responsive interface built with Material UI
+- ♿ Keyboard-accessible drag and drop support
 
-## Installation and running
+---
 
-Install dependencies:
+## 🧰 Tech Stack
 
+| Category | Technologies |
+| --- | --- |
+| Framework | Next.js, React |
+| Language | TypeScript |
+| State Management | Redux Toolkit, Redux Persist |
+| Drag & Drop | dnd-kit |
+| UI Library | Material UI |
+| Forms | React Hook Form |
+| Validation | Zod |
+
+---
+
+## 🚀 Getting Started
+
+### Prerequisites
+
+- Node.js `18+`
+- npm
+
+### Installation
 ```bash
+git clone <repository-url>
+cd kanban-board
 npm install
-```
-
-Start the development server:
-
-```bash
-npm run dev
-```
-
-Open [http://localhost:3000](http://localhost:3000) in your browser.
-
-## Available scripts
-
-- `npm run dev` — start the development server
-- `npm run build` — create a production build
-- `npm run start` — start the production server
-- `npm run lint` — run ESLint
-
-## Basic project structure
-
-```text
-app/                 Next.js app entry points and providers
-src/entities/        Board, column, and card data models and selectors
-src/features/        Board, column, and card UI
-src/shared/           Shared types and UI components
-src/store/            Redux store and slices
-src/theme/            Material UI theme
-```
-
-## Persistence
-
-Redux Persist stores only the normalized `board` state in browser storage. UI state and undo state are not persisted. The store uses persist version `2` and includes a migration scaffold for future state changes. Sample board data is initialized only when no board data is available after rehydration.
-
-## Drag-and-drop and CRUD
-
-Cards use dnd-kit for pointer and keyboard drag-and-drop. Card CRUD actions are handled through Redux Toolkit reducers while card entities and column entities remain normalized. Column `cardIds` define the card order.
